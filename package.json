@@ -1,0 +1,8 @@
+{
+  "name": "kids-tutor-app",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/blob": "latest"
+  }
+}
