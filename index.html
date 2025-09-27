@@ -115,6 +115,14 @@
 </main>
 
 <script>
+
+
+// Trvalé userId (pro profil/pokrok)
+const uidKey = "uceni-agent-uid";
+let userId = localStorage.getItem(uidKey);
+if (!userId) { userId = crypto.randomUUID(); localStorage.setItem(uidKey, userId); }
+
+  
 /** ---------- Databáze (localStorage) + SRS ---------- **/
 const storeKey = "uceni-agent-v1";
 const state = JSON.parse(localStorage.getItem(storeKey) || '{"hist":[], "deck": [], "streak":0, "seen":0, "ok":0}');
@@ -274,7 +282,7 @@ async function sendChat(){
     const r = await fetch('/api/agent', {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ persona: personaSel.value, message: text, history: chatHistory })
+     body: JSON.stringify({ persona: personaSel.value, message: text, history: chatHistory, userId })
     });
     const data = await r.json();
     const reply = data?.reply || 'Promiň, něco se nepovedlo. Zkus to ještě jednou.';
