@@ -1,5 +1,12 @@
-// api/agent.js — AI agent s osobností a "pamětí" přes /api/profile a /api/progress
-export const config = { runtime: 'edge' };
+// api/agent.js — AI agent s osobností a "pamětí" přes /api/profile a /api/progress (Node runtime)
+export const config = { runtime: 'nodejs' };
+
+async function readBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const str = Buffer.concat(chunks).toString();
+  try { return JSON.parse(str || '{}'); } catch { return {}; }
+}
 
 async function getJSON(url, init) {
   try {
@@ -20,33 +27,25 @@ function defaultProfile(userId) {
     notes: ''
   };
 }
+const pct = (ok, seen) => (seen ? Math.round((100 * ok) / seen) : 0);
 
-function pct(ok, seen) { return seen ? Math.round((100 * ok) / seen) : 0; }
-
-export default async function handler(req) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { persona, message, history = [], userId = 'anon' } = (await req.json()) || {};
-    if (!message) {
-      return new Response(JSON.stringify({ error: 'Missing message' }), {
-        status: 400, headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    const body = await readBody(req);
+    const { persona, message, history = [], userId = 'anon' } = body || {};
+    if (!message) return res.status(400).json({ error: 'Missing message' });
 
-    const origin = new URL(req.url).origin;
+    const origin = new URL(req.url, `https://${req.headers.host}`).origin;
 
-    // 1) Načti profil (osobnost, co má rád, cíle)
+    // 1) Profil (osobnost, preference)
     const profile = (await getJSON(`${origin}/api/profile?userId=${encodeURIComponent(userId)}`)) || defaultProfile(userId);
 
-    // 2) Načti pokrok (úspěšnost/streaky) – volitelné
+    // 2) Pokrok (úspěšnost/streaky) – volitelné
     const progress = await getJSON(`${origin}/api/progress?userId=${encodeURIComponent(userId)}`);
-
     const tables = progress?.perMode?.tables || { seen: 0, ok: 0, streak: 0 };
     const vyjm   = progress?.perMode?.vyjmenovana || { seen: 0, ok: 0, streak: 0 };
     const en     = progress?.perMode?.en || { seen: 0, ok: 0, streak: 0 };
@@ -92,20 +91,14 @@ Pravidla:
 
     if (!r.ok) {
       const errText = await r.text();
-      return new Response(JSON.stringify({ error: "Upstream error", detail: errText }), {
-        status: r.status, headers: { 'Content-Type': 'application/json' }
-      });
+      return res.status(r.status).json({ error: "Upstream error", detail: errText });
     }
 
     const data = await r.json();
     const reply = data?.choices?.[0]?.message?.content ?? "Promiň, něco se pokazilo. Zkus to ještě jednou.";
-
-    // (Pozn.: aktualizaci /api/progress necháme na frontend, až bude jasné, zda odpověď byla správně/špatně.)
-    return new Response(JSON.stringify({ reply }), { headers: { "Content-Type": "application/json" } });
+    return res.status(200).json({ reply });
 
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: String(e) });
   }
 }
