@@ -15,7 +15,15 @@
     button{cursor:pointer} button.primary{background:#111;color:#fff;border-color:#111}
     .stat{color:var(--muted)} .ok{color:var(--ok)} .bad{color:var(--bad)} .hidden{display:none}
     @media (hover:hover){button:hover{opacity:.9}}
+    #chatLog{background:#fff;border-radius:12px;padding:12px;height:260px;overflow:auto;border:1px solid #e9ecef}
+.msg{display:flex;margin:6px 0}
+.msg.me{justify-content:flex-end}
+.msg .bubble{padding:10px 12px;border-radius:14px;max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.msg.me .bubble{background:#111;color:#fff;border-bottom-right-radius:4px}
+.msg.bot .bubble{background:#f1f3f5;border-bottom-left-radius:4px}
+
   </style>
+  
 </head>
 <body>
 <header class="row">
@@ -29,6 +37,33 @@
     <button id="reset">Reset statistik</button>
   </div>
 </header>
+
+<section class="card" id="agentCard">
+  <div class="row" style="align-items:center;gap:8px">
+    <strong>Chat s agentem</strong>
+    <span class="stat">• interaktivní trenér</span>
+    <span style="flex:1"></span>
+    <label>Postava:</label>
+    <select id="persona">
+      <option value="robot kamarád" selected>Robot kamarád</option>
+      <option value="vesmírný průzkumník">Vesmírný průzkumník</option>
+      <option value="detektiv">Detektiv</option>
+      <option value="kouzelník">Kouzelník</option>
+      <option value="fotbalový trenér">Fotbalový trenér</option>
+    </select>
+  </div>
+
+  <div id="chatLog" aria-live="polite"></div>
+
+  <div class="row" style="margin-top:10px">
+    <input id="chatInput" type="text" placeholder="Napiš odpověď nebo požádej o cvičení (např. ‚zkoušej mě z násobilky 7‘)" style="flex:1">
+    <button id="sendChat" class="primary">Poslat</button>
+  </div>
+  <div class="stat" id="agentHint" style="margin-top:6px">
+    Tip: Zkus „dej mi diktát z vyjmenovaných slov S“ nebo „procvič se mnou 10 anglických slov o jídle“.
+  </div>
+</section>
+  
 
 <main>
   <section class="card">
@@ -215,6 +250,51 @@ btnReset.addEventListener("click", ()=>{
 
 // Start
 nextQ();
+
+  // ===== Chat s agentem (napojení na /api/agent) =====
+const chatLogEl = document.getElementById('chatLog');
+const chatInputEl = document.getElementById('chatInput');
+const sendChatBtn = document.getElementById('sendChat');
+const personaSel = document.getElementById('persona');
+
+let chatHistory = [];
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c] )); }
+function addMsg(role, content){
+  chatHistory.push({ role, content });
+  const html = `<div class="msg ${role==='user'?'me':'bot'}"><div class="bubble">${esc(content)}</div></div>`;
+  chatLogEl.insertAdjacentHTML('beforeend', html);
+  chatLogEl.scrollTop = chatLogEl.scrollHeight;
+}
+async function sendChat(){
+  const text = (chatInputEl.value || "").trim();
+  if(!text) return;
+  addMsg('user', text);
+  chatInputEl.value = ''; chatInputEl.focus(); sendChatBtn.disabled = true;
+  try{
+    const r = await fetch('/api/agent', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ persona: personaSel.value, message: text, history: chatHistory })
+    });
+    const data = await r.json();
+    const reply = data?.reply || 'Promiň, něco se nepovedlo. Zkus to ještě jednou.';
+    addMsg('assistant', reply);
+  }catch(e){
+    addMsg('assistant', 'Ups, spojení selhalo. Zkus to znovu.');
+  }finally{
+    sendChatBtn.disabled = false;
+  }
+}
+sendChatBtn.addEventListener('click', sendChat);
+chatInputEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') sendChat(); });
+personaSel.addEventListener('change', ()=>{
+  chatHistory = [];
+  chatLogEl.innerHTML = '';
+  addMsg('assistant', `Ahoj! Jsem ${personaSel.value}. Řekni mi, co chceš dnes trénovat – násobilku, vyjmenovaná slova, nebo angličtinu.`);
+});
+// úvodní pozdrav
+addMsg('assistant', 'Ahoj! Jsem Robot kamarád. Umím tě zkoušet z násobilky, vyjmenovaných slov a angličtiny. Co dáme jako první?');
+
 </script>
 </body>
 </html>
