@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Učební agent pro syna</title>
+  <style>
+    :root { --gap: 12px; --card: #fff; --ink:#111; --muted:#666; --bg:#f6f7fb; --ok:#1a7f37; --bad:#c92a2a; }
+    *{box-sizing:border-box} body{margin:0;font:16px/1.4 system-ui, -apple-system, Segoe UI; color:var(--ink); background:var(--bg)}
+    header{position:sticky;top:0;background:#fff;border-bottom:1px solid #e9ecef;padding:12px 16px}
+    main{max-width:860px;margin:0 auto;padding:16px;display:grid;gap:var(--gap)}
+    .row{display:flex;flex-wrap:wrap;gap:var(--gap)}
+    .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px}
+    button,select,input[type="number"],input[type="text"]{font:inherit;border:1px solid #ced4da;border-radius:12px;padding:10px 12px;background:#fff}
+    button{cursor:pointer} button.primary{background:#111;color:#fff;border-color:#111}
+    .stat{color:var(--muted)} .ok{color:var(--ok)} .bad{color:var(--bad)} .hidden{display:none}
+    @media (hover:hover){button:hover{opacity:.9}}
+  </style>
+</head>
+<body>
+<header class="row">
+  <strong>Učební agent</strong>
+  <div style="margin-left:auto" class="row">
+    <select id="mode">
+      <option value="tables">Násobilka</option>
+      <option value="vyjmenovana">Vyjmenovaná slova</option>
+      <option value="en">Angličtina (slovíčka)</option>
+    </select>
+    <button id="reset">Reset statistik</button>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row">
+      <div>
+        <label>Obtížnost: </label>
+        <select id="difficulty">
+          <option value="easy">Lehká</option>
+          <option value="mix" selected>Smíšená</option>
+          <option value="hard">Těžká</option>
+        </select>
+      </div>
+      <div id="tablesCfg" class="row">
+        <label>Rozsah násobků: </label>
+        <input type="number" id="minA" value="1" min="0" max="12" style="width:70px">
+        <span>×</span>
+        <input type="number" id="maxA" value="10" min="1" max="12" style="width:70px">
+      </div>
+      <div id="vyjmCfg" class="row hidden">
+        <label>Série:</label>
+        <select id="series">
+          <option value="B">B</option><option value="L">L</option><option value="M">M</option>
+          <option value="P">P</option><option value="S">S</option><option value="V">V</option><option value="Z">Z</option>
+          <option value="mix" selected>Mix</option>
+        </select>
+      </div>
+      <div id="enCfg" class="row hidden">
+        <label>Téma/slovíčka:</label>
+        <input id="enTopic" type="text" placeholder="např. ovoce; school; daily routine" style="min-width:260px">
+        <button id="loadEn" class="primary">Načíst balíček (AI)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="quiz">
+    <div id="qtext" style="font-size:20px;margin-bottom:8px">Klikni „Další“</div>
+    <input id="answer" type="text" placeholder="odpověď" style="width:100%;max-width:420px">
+    <div class="row" style="margin-top:12px">
+      <button id="check" class="primary">Zkontrolovat</button>
+      <button id="next">Další</button>
+      <div id="feedback" class="stat"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <strong>Statistiky</strong>
+    <div id="stats" class="stat">—</div>
+  </section>
+</main>
+
+<script>
+/** ---------- Databáze (localStorage) + SRS ---------- **/
+const storeKey = "uceni-agent-v1";
+const state = JSON.parse(localStorage.getItem(storeKey) || '{"hist":[], "deck": [], "streak":0, "seen":0, "ok":0}');
+function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
+function addHist(item){ state.hist.push({...item, ts: Date.now()}); if(state.hist.length>1000) state.hist.shift(); save(); }
+function statRender(){
+  const acc = state.seen ? Math.round(100*state.ok/state.seen) : 0;
+  document.getElementById('stats').textContent =
+    `Pokusy: ${state.seen} • Úspěšné: ${state.ok} (${acc} %) • Streak: ${state.streak}`;
+}
+statRender();
+
+/** ---------- Vyjmenovaná slova (základní seznamy) ---------- **/
+const VYJM = {
+  B: ["být","bydlet","byt","přibýt","ubýt","nábytek","obyvatel","kobyla","babyka","bytost","bylinka"],
+  L: ["lyže","lyžovat","pelyněk","plyn","plýtvat","slyšet","lysý","lyra","literatura"],
+  M: ["my","mýt","mýlit se","hmyz","myš","myčka","mykat","dumy","mýdlo"],
+  P: ["pytel","pysk","pyl","pýcha","netopýr","pýřit se","kopyto","slipy","pýr","pylový"],
+  S: ["syn","sytý","sýr","syrový","syčet","sysel","sypat","osyka","kyselina"],
+  V: ["vysoký","výlet","vyžle","výskat","vyvíjet","vyjít","vyjmenovat","výjimka","vyžít"],
+  Z: ["brzy","jazyk","pozor","ozývat se","nazývat","různý","cizí","rezivět","kuzel","nezvyk"]
+};
+/** ---------- Generátory úloh ---------- **/
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+function makeTables(minA,maxA){
+  const a = rand(minA, maxA), b = rand(0, 12);
+  return { type:"tables", q:`Kolik je ${a} × ${b}?`, correct: String(a*b) };
+}
+
+function pickVyjm(series){
+  const keys = series==="mix" ? Object.keys(VYJM) : [series];
+  const k = keys[rand(0, keys.length-1)];
+  const word = VYJM[k][rand(0, VYJM[k].length-1)];
+  // vytvoř variantu s prázdným místem pro i/y (zjednodušené)
+  const txt = word.replace(/[iyý]/i, "_");
+  const correct = word; // uživatel má dopsat celé slovo správně
+  return { type:"vyjm", q:`Doplň správně i/y: ${txt}`, correct };
+}
+
+// EN balíček se načte z API a uloží do state.deck jako {en,cz,example}
+async function loadEnglish(topic){
+  const resp = await fetch("/api/generate",{
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ mode:"en-vocab", prompt: topic })
+  });
+  const { text } = await resp.json();
+  // zkus JSON parse, fallback na heuristiku
+  try {
+    const arr = JSON.parse(text);
+    state.deck = arr;
+  } catch(e){
+    // nouzově vytvoř jeden záznam
+    state.deck = [{ en: topic.split(/[ ,;]/)[0] || "apple", cz:"", example:"This is an apple.", distractors:["apples","maple"] }];
+  }
+  save();
+}
+
+function makeEnglish(){
+  if(!state.deck?.length) return { type:"en", q:"Nejprve načti balíček přes „Načíst balíček (AI)“", correct:"" };
+  const it = state.deck[rand(0, state.deck.length-1)];
+  const askType = Math.random()<0.5 ? "cz2en" : "en2cz";
+  if(askType==="cz2en"){
+    return { type:"en", q:`Přelož do EN: „${it.cz || it.en}“`, correct: it.en.toLowerCase(), hint: it.example || "" };
+  } else {
+    return { type:"en", q:`Co znamená anglicky „${it.en}“?`, correct: (it.cz || "").toLowerCase(), hint: it.example || "" };
+  }
+}
+
+/** ---------- UI logika ---------- **/
+const modeSel = document.getElementById("mode");
+const diffSel = document.getElementById("difficulty");
+const qtext = document.getElementById("qtext");
+const answer = document.getElementById("answer");
+const feedback = document.getElementById("feedback");
+const btnCheck = document.getElementById("check");
+const btnNext = document.getElementById("next");
+const tablesCfg = document.getElementById("tablesCfg");
+const vyjmCfg = document.getElementById("vyjmCfg");
+const enCfg = document.getElementById("enCfg");
+const enTopic = document.getElementById("enTopic");
+const btnLoadEn = document.getElementById("loadEn");
+const btnReset = document.getElementById("reset");
+
+let current = null;
+
+function updateCfg(){
+  tablesCfg.classList.toggle("hidden", modeSel.value!=="tables");
+  vyjmCfg.classList.toggle("hidden", modeSel.value!=="vyjmenovana");
+  enCfg.classList.toggle("hidden", modeSel.value!=="en");
+}
+updateCfg();
+modeSel.addEventListener("change", updateCfg);
+
+async function nextQ(){
+  feedback.textContent = "";
+  answer.value = "";
+  if(modeSel.value==="tables"){
+    const minA = +document.getElementById("minA").value || 1;
+    const maxA = +document.getElementById("maxA").value || 10;
+    current = makeTables(minA, maxA);
+  } else if(modeSel.value==="vyjmenovana"){
+    const series = document.getElementById("series").value;
+    current = pickVyjm(series);
+  } else {
+    current = makeEnglish();
+  }
+  qtext.textContent = current.q;
+  answer.focus();
+}
+btnNext.addEventListener("click", nextQ);
+
+btnCheck.addEventListener("click", ()=>{
+  if(!current) return;
+  const a = (answer.value || "").trim().toLowerCase();
+  const ok = a && current.correct && a === current.correct.toLowerCase();
+  state.seen++; if(ok){ state.ok++; state.streak++; feedback.innerHTML = `<span class="ok">Správně!</span>`; }
+  else { state.streak = 0; feedback.innerHTML = `<span class="bad">Ještě ne. Správně: ${current.correct}</span>`; }
+  addHist({mode: modeSel.value, q: current.q, a, correct: current.correct, ok});
+  statRender();
+});
+
+btnLoadEn.addEventListener("click", async ()=>{
+  btnLoadEn.disabled = true; btnLoadEn.textContent = "Načítám…";
+  await loadEnglish(enTopic.value || "common objects");
+  btnLoadEn.disabled = false; btnLoadEn.textContent = "Načíst balíček (AI)";
+  alert("Balíček načten. Můžeš cvičit.");
+});
+
+btnReset.addEventListener("click", ()=>{
+  if(confirm("Smazat statistiky?")){ localStorage.removeItem(storeKey); location.reload(); }
+});
+
+// Start
+nextQ();
+</script>
+</body>
+</html>
