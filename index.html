@@ -260,11 +260,30 @@ btnCheck.addEventListener("click", ()=>{
   if(!current) return;
   const a = (answer.value || "").trim().toLowerCase();
   const ok = a && current.correct && a === current.correct.toLowerCase();
-  state.seen++; if(ok){ state.ok++; state.streak++; feedback.innerHTML = `<span class="ok">Správně!</span>`; }
-  else { state.streak = 0; feedback.innerHTML = `<span class="bad">Ještě ne. Správně: ${current.correct}</span>`; }
-  addHist({mode: modeSel.value, q: current.q, a, correct: current.correct, ok});
+
+  state.seen++;
+  if (ok) {
+    state.ok++;
+    state.streak++;
+    feedback.innerHTML = `<span class="ok">Správně!</span>`;
+  } else {
+    state.streak = 0;
+    feedback.innerHTML = `<span class="bad">Ještě ne. Správně: ${current.correct}</span>`;
+  }
+
+  // lokální historie
+  addHist({ mode: modeSel.value, q: current.q, a, correct: current.correct, ok });
+
+  // ⬇️ NOVÉ: serverové statistiky (trvalá paměť pokroku)
+  fetch("/api/progress", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, mode: modeSel.value, correct: ok, item: current.q })
+  }).catch(()=>{});
+
   statRender();
 });
+
 
 btnLoadEn.addEventListener("click", async ()=>{
   btnLoadEn.disabled = true; btnLoadEn.textContent = "Načítám…";
