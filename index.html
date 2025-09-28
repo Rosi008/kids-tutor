@@ -324,6 +324,64 @@ personaSel.addEventListener('change', ()=>{
 // úvodní pozdrav
 addMsg('assistant', 'Ahoj! Jsem Robot kamarád. Umím tě zkoušet z násobilky, vyjmenovaných slov a angličtiny. Co dáme jako první?');
 
+// ===== Profil (trvalá paměť přes /api/profile) =====
+const likesInput = document.getElementById('likesInput');
+const dailyGoalInput = document.getElementById('dailyGoalInput');
+const personaSelectProfile = document.getElementById('personaSelect');
+const saveProfileBtn = document.getElementById('saveProfile');
+const profileMsg = document.getElementById('profileMsg');
+
+// pokud už existuje výběr persony v chat sekci, synchronizujeme je oběma směry
+const personaSelChat = document.getElementById('persona');
+
+function setPersonaUI(val){
+  if (personaSelectProfile) personaSelectProfile.value = val;
+  if (personaSelChat) personaSelChat.value = val;
+}
+
+async function loadProfile(){
+  try{
+    const r = await fetch(`/api/profile?userId=${encodeURIComponent(userId)}`);
+    const p = await r.json();
+    likesInput.value = (p.likes || []).join(', ');
+    dailyGoalInput.value = p?.goals?.dailyQuestions ?? 10;
+    setPersonaUI(p.persona || 'Robot kamarád');
+    profileMsg.textContent = 'Profil načten.';
+    // úvodní zpráva chatu může reflektovat personu
+    if (typeof chatLogEl !== 'undefined' && chatLogEl && !chatLogEl.innerHTML.trim()){
+      addMsg('assistant', `Ahoj! Jsem ${p.persona || 'Robot kamarád'}. Vidím, že máš rád ${ (p.likes||[]).join(', ') || 'spoustu věcí' }. Dáme si dnes cíl ${p?.goals?.dailyQuestions ?? 10} otázek?`);
+    }
+  }catch(e){
+    profileMsg.textContent = 'Profil se nepodařilo načíst.';
+  }
+}
+
+async function saveProfile(){
+  const likes = likesInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+  const daily = Math.max(1, parseInt(dailyGoalInput.value || '10', 10));
+  const persona = (personaSelectProfile?.value) || 'Robot kamarád';
+  try{
+    const r = await fetch('/api/profile', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        userId,
+        patch: { likes, persona, goals: { dailyQuestions: daily } }
+      })
+    });
+    const p = await r.json();
+    setPersonaUI(p.persona || 'Robot kamarád');
+    profileMsg.textContent = 'Uloženo.';
+  }catch(e){
+    profileMsg.textContent = 'Uložení se nepodařilo.';
+  }
+}
+if (saveProfileBtn) saveProfileBtn.addEventListener('click', saveProfile);
+
+// načti profil po načtení stránky
+loadProfile();
+  
+  
 </script>
 </body>
 </html>
