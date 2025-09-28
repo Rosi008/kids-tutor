@@ -38,6 +38,27 @@
   </div>
 </header>
 
+<section class="card" id="profileCard">
+  <strong>Profil agenta (paměť)</strong>
+  <div class="row" style="gap:8px;align-items:center">
+    <label>Co má rád:</label>
+    <input id="likesInput" type="text" placeholder="např. lego, fotbal" style="min-width:260px">
+    <label>Denní cíl (otázek):</label>
+    <input id="dailyGoalInput" type="number" min="1" value="10" style="width:100px">
+    <label>Postava:</label>
+    <select id="personaSelect">
+      <option value="Robot kamarád">Robot kamarád</option>
+      <option value="Vesmírný průzkumník">Vesmírný průzkumník</option>
+      <option value="Detektiv">Detektiv</option>
+      <option value="Kouzelník">Kouzelník</option>
+      <option value="Fotbalový trenér">Fotbalový trenér</option>
+    </select>
+    <button id="saveProfile" class="primary">Uložit profil</button>
+  </div>
+  <div class="stat" id="profileMsg"></div>
+</section>
+
+
 <section class="card" id="agentCard">
   <div class="row" style="align-items:center;gap:8px">
     <strong>Chat s agentem</strong>
