@@ -1,131 +1,131 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Kids Tutor – Admin</title>
-<style>
-body{font:16px system-ui;margin:0;background:#f6f7fb;color:#111}
-main{max-width:960px;margin:0 auto;padding:16px;display:grid;gap:16px}
-.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-textarea{width:100%;min-height:160px}
-input,textarea,select,button{font:inherit;padding:10px;border:1px solid #ced4da;border-radius:10px}
-button.primary{background:#111;color:#fff;border-color:#111}
-.stat{color:#666}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin • Učební kamarád</title>
+  <link rel="stylesheet" href="./admin.css" />
 </head>
 <body>
-<main>
-<section class="card">
-  <div class="row">
-    <strong>Admin přístup</strong>
-    <input id="token" placeholder="ADMIN_TOKEN" style="flex:1">
-    <button id="saveTok" class="primary">Uložit</button>
-    <span id="tokMsg" class="stat"></span>
-  </div>
-</section>
-
-<section class="card">
-  <strong>Agent – nastavení</strong>
-  <div class="row"><button id="loadCfg">Načíst</button><button id="saveCfg" class="primary">Uložit</button><span id="cfgMsg" class="stat"></span></div>
-  <div class="row" style="gap:16px">
-    <div style="flex:1">
-      <div class="stat">agent.md (styl, tón, šablona)</div>
-      <textarea id="agentMd"></textarea>
+  <header class="topbar">
+    <div class="brand">🛠️ Admin • Učební kamarád</div>
+    <div class="right">
+      <span id="env-badge" class="badge">offline</span>
+      <button id="btn-logout" class="ghost small" title="Odhlásit">Odhlásit</button>
     </div>
-    <div style="flex:1">
-      <div class="stat">agent.json (model, teplota…)</div>
-      <textarea id="agentJson" style="min-height:160px"></textarea>
+  </header>
+
+  <!-- GATE: token login -->
+  <section id="gate" class="centered">
+    <div class="card narrow">
+      <h1>Přihlášení</h1>
+      <p class="muted">Zadej <strong>ADMIN_TOKEN</strong>. Token se uloží jen do tohoto prohlížeče.</p>
+      <label>Admin token
+        <input id="token-input" type="password" placeholder="••••••" autocomplete="off" />
+      </label>
+      <div class="row">
+        <label class="row"><input id="show-token" type="checkbox" /> Zobrazit</label>
+      </div>
+      <label>API Base (volitelné)
+        <input id="api-base" type="text" placeholder="např. https://app.vercel.app" />
+      </label>
+      <div class="row end">
+        <button id="btn-login" class="cta">Přihlásit</button>
+      </div>
+      <div id="gate-status" class="status"></div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="card">
-  <strong>Vyjmenovaná slova</strong>
-  <div class="row"><button id="loadVyjm">Načíst</button><button id="saveVyjm" class="primary">Uložit</button><span id="vyjmMsg" class="stat"></span></div>
-  <textarea id="vyjmBox"></textarea>
-</section>
+  <!-- APP -->
+  <main id="app" class="hidden">
+    <nav class="tabs">
+      <button data-tab="config" class="active">Konfigurace agenta</button>
+      <button data-tab="lists">Seznamy (obsah)</button>
+      <button data-tab="diag">Diagnostika</button>
+    </nav>
 
-<section class="card">
-  <strong>English words (jen EN; agent přeloží + vytvoří věty)</strong>
-  <div class="row">
-    <button id="loadEN">Načíst</button>
-    <button id="saveEN" class="primary">Uložit</button>
-    <button id="pushChroma" title="vytvoří embeddingy a uloží do Chroma">Push do Chroma</button>
-    <span id="enMsg" class="stat"></span>
-  </div>
-  <textarea id="enBox"></textarea>
-</section>
-</main>
+    <!-- CONFIG TAB -->
+    <section id="tab-config" class="tab active">
+      <div class="grid two">
+        <div class="card">
+          <h2>agent.json</h2>
+          <div class="toolbar">
+            <button id="json-format" class="ghost small">Formátovat</button>
+            <button id="json-validate" class="ghost small">Validovat</button>
+            <button id="json-download" class="ghost small">Stáhnout</button>
+            <label class="ghost small file">Nahrát
+              <input id="json-upload" type="file" accept="application/json,.json" />
+            </label>
+          </div>
+          <textarea id="agent-json" spellcheck="false" class="mono" rows="20" placeholder='{"model":"gpt-4o-mini","temperature":0.4,"name":"Kája","persona":"trpělivý kamarád"}'></textarea>
+        </div>
+        <div class="card">
+          <h2>agent.md</h2>
+          <div class="toolbar">
+            <button id="md-download" class="ghost small">Stáhnout</button>
+            <label class="ghost small file">Nahrát
+              <input id="md-upload" type="file" accept="text/markdown,.md,.txt" />
+            </label>
+          </div>
+          <textarea id="agent-md" spellcheck="false" class="mono" rows="20" placeholder="# Styl a pravidla agenta\n- přívětivý tón\n- jednoduchá slova\n- krátké věty\n"></textarea>
+        </div>
+      </div>
+      <div class="row end gap">
+        <button id="config-load" class="ghost">Načíst z /api/config</button>
+        <button id="config-save" class="cta">Uložit do /api/config</button>
+      </div>
+      <div id="config-status" class="status"></div>
+    </section>
 
-<script>
-const tokInput = document.getElementById('token');
-const tokMsg = document.getElementById('tokMsg');
-document.getElementById('saveTok').onclick = () => {
-  localStorage.setItem('ADMIN_TOKEN', tokInput.value.trim());
-  tokMsg.textContent = 'Uloženo.';
-};
-tokInput.value = localStorage.getItem('ADMIN_TOKEN') || '';
+    <!-- LISTS TAB -->
+    <section id="tab-lists" class="tab">
+      <div class="grid two">
+        <div class="card">
+          <h2>Vyjmenovaná slova</h2>
+          <p class="muted">Buď JSON pole, nebo každé slovo na nový řádek.</p>
+          <textarea id="vyj-text" rows="14" spellcheck="false" class="mono" placeholder="být\nbydlet\nmyslivec\nobyvatel"></textarea>
+        </div>
+        <div class="card">
+          <h2>English list (en/cs)</h2>
+          <p class="muted">JSON pole objektů: <code>{"en":"cat","cs":"kočka"}</code>. Pokud <code>cs</code> vynecháš, backend je doplní automaticky.</p>
+          <textarea id="en-json" rows="14" spellcheck="false" class="mono" placeholder='[{"en":"cat"},{"en":"dog"},{"en":"book"}]'></textarea>
+          <div class="row gap">
+            <button id="en-format" class="ghost small">Formátovat</button>
+            <button id="en-validate" class="ghost small">Validovat</button>
+          </div>
+        </div>
+      </div>
+      <div class="row gap wrap">
+        <button id="lists-load" class="ghost">Načíst z /api/lists</button>
+        <button id="lists-save" class="cta">Uložit do /api/lists</button>
+        <button id="lists-download" class="ghost">Stáhnout JSON</button>
+        <label class="ghost file">Nahrát JSON
+          <input id="lists-upload" type="file" accept="application/json,.json" />
+        </label>
+      </div>
+      <div id="lists-status" class="status"></div>
+    </section>
 
-async function GET(url){
-  const r = await fetch(url);
-  return await r.json();
-}
-async function POST(url, body, admin=false){
-  const headers = { 'Content-Type':'application/json' };
-  if(admin){ const t = localStorage.getItem('ADMIN_TOKEN'); if(t) headers['x-admin-token']=t; }
-  const r = await fetch(url, { method:'POST', headers, body: JSON.stringify(body||{}) });
-  if(!r.ok) throw new Error(await r.text());
-  return await r.json();
-}
+    <!-- DIAG TAB -->
+    <section id="tab-diag" class="tab">
+      <div class="card">
+        <h2>Ping a kontrola endpointů</h2>
+        <div class="grid two">
+          <div>
+            <button class="ghost" data-ping="/api/config">GET /api/config</button>
+            <button class="ghost" data-ping="/api/lists">GET /api/lists</button>
+            <button class="ghost" data-ping="/api/progress?userId=test">GET /api/progress?userId=test</button>
+          </div>
+          <div>
+            <button class="ghost" id="btn-clear-cache">Vymazat localStorage</button>
+            <button class="ghost" id="btn-copy-curl">Zkopírovat cURL pro /api/lists POST</button>
+          </div>
+        </div>
+        <pre id="diag-output" class="mono scroll"></pre>
+      </div>
+    </section>
+  </main>
 
-// Agent config
-const mdEl = document.getElementById('agentMd');
-const jsEl = document.getElementById('agentJson');
-const cfgMsg = document.getElementById('cfgMsg');
-document.getElementById('loadCfg').onclick = async ()=>{
-  const cfg = await GET('/api/config');
-  mdEl.value = cfg.md; jsEl.value = JSON.stringify(cfg.json, null, 2);
-  cfgMsg.textContent = 'Načteno.';
-};
-document.getElementById('saveCfg').onclick = async ()=>{
-  const json = JSON.parse(jsEl.value || '{}');
-  await POST('/api/config', { md: mdEl.value, json }, true);
-  cfgMsg.textContent = 'Uloženo.';
-};
-
-// Vyjmenovaná
-const vyjmBox = document.getElementById('vyjmBox');
-const vyjmMsg = document.getElementById('vyjmMsg');
-document.getElementById('loadVyjm').onclick = async ()=>{
-  const data = await GET('/api/lists?type=vyjmenovana');
-  vyjmBox.value = JSON.stringify(data, null, 2); vyjmMsg.textContent = 'Načteno.';
-};
-document.getElementById('saveVyjm').onclick = async ()=>{
-  const data = JSON.parse(vyjmBox.value || '{}');
-  await POST('/api/lists', { type:'vyjmenovana', data }, true);
-  vyjmMsg.textContent = 'Uloženo.';
-};
-
-// EN words
-const enBox = document.getElementById('enBox');
-const enMsg = document.getElementById('enMsg');
-document.getElementById('loadEN').onclick = async ()=>{
-  const data = await GET('/api/lists?type=english_words');
-  enBox.value = JSON.stringify(data, null, 2); enMsg.textContent = 'Načteno.';
-};
-document.getElementById('saveEN').onclick = async ()=>{
-  const data = JSON.parse(enBox.value || '{}');
-  await POST('/api/lists', { type:'english_words', data }, true);
-  enMsg.textContent = 'Uloženo.';
-};
-document.getElementById('pushChroma').onclick = async ()=>{
-  const data = JSON.parse(enBox.value || '{}');
-  const words = (data.words || []).map((w,i)=>({ id:`en-${i}-${w}`, text:w, metadata:{kind:'word'} }));
-  await POST('/api/memory?action=upsert', { namespace:'english', items: words }, true);
-  enMsg.textContent = 'Nahráno do Chroma.';
-};
-</script>
+  <script src="./admin.js" type="module"></script>
 </body>
 </html>
