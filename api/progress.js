@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing fields: userId, mode, correct' });
       }
       await updateProgress({ userId, mode, correct, item });
-      const prog = await getProgress(userId); // vrátíme aktuální snapshot
+      const prog = await getProgress(userId);
       return res.status(200).json(prog);
     }
 
