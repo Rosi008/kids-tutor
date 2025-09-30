@@ -3,27 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="robots" content="noindex,nofollow"/>
   <title>Učební agent pro syna</title>
   <style>
-    :root { --gap: 12px; --card: #fff; --ink:#111; --muted:#666; --bg:#f6f7fb; --ok:#1a7f37; --bad:#c92a2a; }
-    *{box-sizing:border-box} body{margin:0;font:16px/1.4 system-ui, -apple-system, Segoe UI; color:var(--ink); background:var(--bg)}
+    :root { --gap: 12px; --card:#fff; --ink:#111; --muted:#666; --bg:#f6f7fb; --ok:#1a7f37; --bad:#c92a2a; }
+    *{box-sizing:border-box} body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI;color:var(--ink);background:var(--bg)}
     header{position:sticky;top:0;background:#fff;border-bottom:1px solid #e9ecef;padding:12px 16px}
-    main{max-width:860px;margin:0 auto;padding:16px;display:grid;gap:var(--gap)}
-    .row{display:flex;flex-wrap:wrap;gap:var(--gap)}
+    main{max-width:980px;margin:0 auto;padding:16px;display:grid;gap:var(--gap)}
+    .row{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center}
     .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px}
     button,select,input[type="number"],input[type="text"]{font:inherit;border:1px solid #ced4da;border-radius:12px;padding:10px 12px;background:#fff}
     button{cursor:pointer} button.primary{background:#111;color:#fff;border-color:#111}
     .stat{color:var(--muted)} .ok{color:var(--ok)} .bad{color:var(--bad)} .hidden{display:none}
     @media (hover:hover){button:hover{opacity:.9}}
-    #chatLog{background:#fff;border-radius:12px;padding:12px;height:260px;overflow:auto;border:1px solid #e9ecef}
-.msg{display:flex;margin:6px 0}
-.msg.me{justify-content:flex-end}
-.msg .bubble{padding:10px 12px;border-radius:14px;max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.msg.me .bubble{background:#111;color:#fff;border-bottom-right-radius:4px}
-.msg.bot .bubble{background:#f1f3f5;border-bottom-left-radius:4px}
 
+    /* Chat */
+    #chatLog{background:#fff;border-radius:12px;padding:12px;height:260px;overflow:auto;border:1px solid #e9ecef}
+    .msg{display:flex;margin:6px 0}
+    .msg.me{justify-content:flex-end}
+    .msg .bubble{padding:10px 12px;border-radius:14px;max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .msg.me .bubble{background:#111;color:#fff;border-bottom-right-radius:4px}
+    .msg.bot .bubble{background:#f1f3f5;border-bottom-left-radius:4px}
   </style>
-  
 </head>
 <body>
 <header class="row">
@@ -38,54 +39,6 @@
   </div>
 </header>
 
-<section class="card" id="profileCard">
-  <strong>Profil agenta (paměť)</strong>
-  <div class="row" style="gap:8px;align-items:center">
-    <label>Co má rád:</label>
-    <input id="likesInput" type="text" placeholder="např. lego, fotbal" style="min-width:260px">
-    <label>Denní cíl (otázek):</label>
-    <input id="dailyGoalInput" type="number" min="1" value="10" style="width:100px">
-    <label>Postava:</label>
-    <select id="personaSelect">
-      <option value="Robot kamarád">Robot kamarád</option>
-      <option value="Vesmírný průzkumník">Vesmírný průzkumník</option>
-      <option value="Detektiv">Detektiv</option>
-      <option value="Kouzelník">Kouzelník</option>
-      <option value="Fotbalový trenér">Fotbalový trenér</option>
-    </select>
-    <button id="saveProfile" class="primary">Uložit profil</button>
-  </div>
-  <div class="stat" id="profileMsg"></div>
-</section>
-
-
-<section class="card" id="agentCard">
-  <div class="row" style="align-items:center;gap:8px">
-    <strong>Chat s agentem</strong>
-    <span class="stat">• interaktivní trenér</span>
-    <span style="flex:1"></span>
-    <label>Postava:</label>
-    <select id="persona">
-      <option value="robot kamarád" selected>Robot kamarád</option>
-      <option value="vesmírný průzkumník">Vesmírný průzkumník</option>
-      <option value="detektiv">Detektiv</option>
-      <option value="kouzelník">Kouzelník</option>
-      <option value="fotbalový trenér">Fotbalový trenér</option>
-    </select>
-  </div>
-
-  <div id="chatLog" aria-live="polite"></div>
-
-  <div class="row" style="margin-top:10px">
-    <input id="chatInput" type="text" placeholder="Napiš odpověď nebo požádej o cvičení (např. ‚zkoušej mě z násobilky 7‘)" style="flex:1">
-    <button id="sendChat" class="primary">Poslat</button>
-  </div>
-  <div class="stat" id="agentHint" style="margin-top:6px">
-    Tip: Zkus „dej mi diktát z vyjmenovaných slov S“ nebo „procvič se mnou 10 anglických slov o jídle“.
-  </div>
-</section>
-  
-
 <main>
   <section class="card">
     <div class="row">
@@ -97,12 +50,14 @@
           <option value="hard">Těžká</option>
         </select>
       </div>
+
       <div id="tablesCfg" class="row">
         <label>Rozsah násobků: </label>
         <input type="number" id="minA" value="1" min="0" max="12" style="width:70px">
         <span>×</span>
         <input type="number" id="maxA" value="10" min="1" max="12" style="width:70px">
       </div>
+
       <div id="vyjmCfg" class="row hidden">
         <label>Série:</label>
         <select id="series">
@@ -111,10 +66,10 @@
           <option value="mix" selected>Mix</option>
         </select>
       </div>
+
       <div id="enCfg" class="row hidden">
-        <label>Téma/slovíčka:</label>
-        <input id="enTopic" type="text" placeholder="např. ovoce; school; daily routine" style="min-width:260px">
-        <button id="loadEn" class="primary">Načíst balíček (AI)</button>
+        <button id="loadEn" class="primary">Načíst slova z adminu (AI)</button>
+        <span class="stat">admin zadává pouze EN slova, AI doplní překlad + větu</span>
       </div>
     </div>
   </section>
@@ -129,6 +84,54 @@
     </div>
   </section>
 
+  <!-- PROFIL -->
+  <section class="card" id="profileCard">
+    <strong>Profil agenta (paměť)</strong>
+    <div class="row" style="gap:8px;align-items:center">
+      <label>Co má rád:</label>
+      <input id="likesInput" type="text" placeholder="např. lego, fotbal" style="min-width:260px">
+      <label>Denní cíl (otázek):</label>
+      <input id="dailyGoalInput" type="number" min="1" value="10" style="width:100px">
+      <label>Postava:</label>
+      <select id="personaSelect">
+        <option value="Robot kamarád">Robot kamarád</option>
+        <option value="Vesmírný průzkumník">Vesmírný průzkumník</option>
+        <option value="Detektiv">Detektiv</option>
+        <option value="Kouzelník">Kouzelník</option>
+        <option value="Fotbalový trenér">Fotbalový trenér</option>
+      </select>
+      <button id="saveProfile" class="primary">Uložit profil</button>
+    </div>
+    <div class="stat" id="profileMsg"></div>
+  </section>
+
+  <!-- CHAT -->
+  <section class="card" id="agentCard">
+    <div class="row" style="align-items:center;gap:8px">
+      <strong>Chat s agentem</strong>
+      <span class="stat">• interaktivní trenér</span>
+      <span style="flex:1"></span>
+      <label>Postava:</label>
+      <select id="persona">
+        <option value="Robot kamarád" selected>Robot kamarád</option>
+        <option value="Vesmírný průzkumník">Vesmírný průzkumník</option>
+        <option value="Detektiv">Detektiv</option>
+        <option value="Kouzelník">Kouzelník</option>
+        <option value="Fotbalový trenér">Fotbalový trenér</option>
+      </select>
+    </div>
+
+    <div id="chatLog" aria-live="polite"></div>
+
+    <div class="row" style="margin-top:10px">
+      <input id="chatInput" type="text" placeholder="Napiš odpověď nebo popros o cvičení (např. ‚zkoušej mě z násobilky 7‘)" style="flex:1">
+      <button id="sendChat" class="primary">Poslat</button>
+    </div>
+    <div class="stat" id="agentHint" style="margin-top:6px">
+      Tip: Zkus „dej mi diktát z vyjmenovaných slov S“ nebo „procvič se mnou 10 anglických slov o jídle“.
+    </div>
+  </section>
+
   <section class="card">
     <strong>Statistiky</strong>
     <div id="stats" class="stat">—</div>
@@ -136,36 +139,33 @@
 </main>
 
 <script>
-
-
+/** ---------- Lokální statistiky (zůstanou) ---------- **/
+const storeKey = "uceni-agent-v1";
 // Trvalé userId (pro profil/pokrok)
 const uidKey = "uceni-agent-uid";
 let userId = localStorage.getItem(uidKey);
 if (!userId) { userId = crypto.randomUUID(); localStorage.setItem(uidKey, userId); }
 
-  
-/** ---------- Databáze (localStorage) + SRS ---------- **/
-const storeKey = "uceni-agent-v1";
 const state = JSON.parse(localStorage.getItem(storeKey) || '{"hist":[], "deck": [], "streak":0, "seen":0, "ok":0}');
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 function addHist(item){ state.hist.push({...item, ts: Date.now()}); if(state.hist.length>1000) state.hist.shift(); save(); }
 function statRender(){
   const acc = state.seen ? Math.round(100*state.ok/state.seen) : 0;
-  document.getElementById('stats').textContent =
-    `Pokusy: ${state.seen} • Úspěšné: ${state.ok} (${acc} %) • Streak: ${state.streak}`;
+  document.getElementById('stats').textContent = `Pokusy: ${state.seen} • Úspěšné: ${state.ok} (${acc} %) • Streak: ${state.streak}`;
 }
 statRender();
 
-/** ---------- Vyjmenovaná slova (základní seznamy) ---------- **/
-const VYJM = {
-  B: ["být","bydlet","byt","přibýt","ubýt","nábytek","obyvatel","kobyla","babyka","bytost","bylinka"],
-  L: ["lyže","lyžovat","pelyněk","plyn","plýtvat","slyšet","lysý","lyra","literatura"],
-  M: ["my","mýt","mýlit se","hmyz","myš","myčka","mykat","dumy","mýdlo"],
-  P: ["pytel","pysk","pyl","pýcha","netopýr","pýřit se","kopyto","slipy","pýr","pylový"],
-  S: ["syn","sytý","sýr","syrový","syčet","sysel","sypat","osyka","kyselina"],
-  V: ["vysoký","výlet","vyžle","výskat","vyvíjet","vyjít","vyjmenovat","výjimka","vyžít"],
-  Z: ["brzy","jazyk","pozor","ozývat se","nazývat","různý","cizí","rezivět","kuzel","nezvyk"]
-};
+/** ---------- Data: Vyjmenovaná (dynamicky z /api/lists) ---------- **/
+let VYJM_DATA = null;
+async function loadVyjmenovana(){
+  try{
+    const r = await fetch('/api/lists?type=vyjmenovana'); VYJM_DATA = await r.json();
+  }catch(e){
+    VYJM_DATA = null;
+  }
+}
+loadVyjmenovana();
+
 /** ---------- Generátory úloh ---------- **/
 function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
 
@@ -175,35 +175,39 @@ function makeTables(minA,maxA){
 }
 
 function pickVyjm(series){
-  const keys = series==="mix" ? Object.keys(VYJM) : [series];
+  const data = VYJM_DATA || {};
+  const keysAvail = Object.keys(data).length ? Object.keys(data) : ["B","L","M","P","S","V","Z"];
+  const keys = series==="mix" ? keysAvail : [series];
   const k = keys[rand(0, keys.length-1)];
-  const word = VYJM[k][rand(0, VYJM[k].length-1)];
-  // vytvoř variantu s prázdným místem pro i/y (zjednodušené)
-  const txt = word.replace(/[iyý]/i, "_");
-  const correct = word; // uživatel má dopsat celé slovo správně
-  return { type:"vyjm", q:`Doplň správně i/y: ${txt}`, correct };
+  const list = (data[k] && data[k].length) ? data[k] : ["b_t"]; // fallback
+  const w = list[rand(0, list.length-1)];
+  const txt = String(w).replace(/[iyý]/i, "_");
+  return { type:"vyjm", q:`Doplň správně i/y: ${txt}`, correct: String(w) };
 }
 
-// EN balíček se načte z API a uloží do state.deck jako {en,cz,example}
-async function loadEnglish(topic){
+async function loadEnglishFromAdmin(){
+  // 1) vezmeme EN slova z /api/lists
+  const r = await fetch('/api/lists?type=english_words');
+  const data = await r.json();
+  const words = Array.isArray(data?.words) ? data.words.slice(0, 20) : ["apple","book","friend"];
+
+  // 2) požádáme AI, aby vytvořila kartičky (en, cz, example, distractors) z těchto slov
   const resp = await fetch("/api/generate",{
     method:"POST", headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ mode:"en-vocab", prompt: topic })
+    body: JSON.stringify({ mode:"en-vocab", words })
   });
   const { text } = await resp.json();
-  // zkus JSON parse, fallback na heuristiku
   try {
-    const arr = JSON.parse(text);
+    const arr = JSON.parse(text); // očekává: [{en,cz,example,distractors}]
     state.deck = arr;
   } catch(e){
-    // nouzově vytvoř jeden záznam
-    state.deck = [{ en: topic.split(/[ ,;]/)[0] || "apple", cz:"", example:"This is an apple.", distractors:["apples","maple"] }];
+    state.deck = words.map(w => ({ en:w, cz:"", example:`This is a ${w}.`, distractors:[w+"s","maple"] }));
   }
   save();
 }
 
 function makeEnglish(){
-  if(!state.deck?.length) return { type:"en", q:"Nejprve načti balíček přes „Načíst balíček (AI)“", correct:"" };
+  if(!state.deck?.length) return { type:"en", q:"Nejprve načti slova z adminu přes „Načíst slova z adminu (AI)“", correct:"" };
   const it = state.deck[rand(0, state.deck.length-1)];
   const askType = Math.random()<0.5 ? "cz2en" : "en2cz";
   if(askType==="cz2en"){
@@ -213,7 +217,7 @@ function makeEnglish(){
   }
 }
 
-/** ---------- UI logika ---------- **/
+/** ---------- UI prvky ---------- **/
 const modeSel = document.getElementById("mode");
 const diffSel = document.getElementById("difficulty");
 const qtext = document.getElementById("qtext");
@@ -224,11 +228,8 @@ const btnNext = document.getElementById("next");
 const tablesCfg = document.getElementById("tablesCfg");
 const vyjmCfg = document.getElementById("vyjmCfg");
 const enCfg = document.getElementById("enCfg");
-const enTopic = document.getElementById("enTopic");
 const btnLoadEn = document.getElementById("loadEn");
 const btnReset = document.getElementById("reset");
-
-let current = null;
 
 function updateCfg(){
   tablesCfg.classList.toggle("hidden", modeSel.value!=="tables");
@@ -244,37 +245,32 @@ async function nextQ(){
   if(modeSel.value==="tables"){
     const minA = +document.getElementById("minA").value || 1;
     const maxA = +document.getElementById("maxA").value || 10;
-    current = makeTables(minA, maxA);
+    qtext.textContent = (current = makeTables(minA, maxA)).q;
   } else if(modeSel.value==="vyjmenovana"){
     const series = document.getElementById("series").value;
-    current = pickVyjm(series);
+    qtext.textContent = (current = pickVyjm(series)).q;
   } else {
     current = makeEnglish();
+    qtext.textContent = current.q;
   }
-  qtext.textContent = current.q;
   answer.focus();
 }
 btnNext.addEventListener("click", nextQ);
 
+/** ---------- Kontrola odpovědi + zápis na server ---------- **/
+let current = null;
 btnCheck.addEventListener("click", ()=>{
   if(!current) return;
   const a = (answer.value || "").trim().toLowerCase();
   const ok = a && current.correct && a === current.correct.toLowerCase();
 
   state.seen++;
-  if (ok) {
-    state.ok++;
-    state.streak++;
-    feedback.innerHTML = `<span class="ok">Správně!</span>`;
-  } else {
-    state.streak = 0;
-    feedback.innerHTML = `<span class="bad">Ještě ne. Správně: ${current.correct}</span>`;
-  }
+  if (ok) { state.ok++; state.streak++; feedback.innerHTML = `<span class="ok">Správně!</span>`; }
+  else { state.streak = 0; feedback.innerHTML = `<span class="bad">Ještě ne. Správně: ${current.correct}</span>`; }
 
-  // lokální historie
   addHist({ mode: modeSel.value, q: current.q, a, correct: current.correct, ok });
 
-  // ⬇️ NOVÉ: serverové statistiky (trvalá paměť pokroku)
+  // serverové statistiky (Postgres)
   fetch("/api/progress", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -284,22 +280,18 @@ btnCheck.addEventListener("click", ()=>{
   statRender();
 });
 
-
 btnLoadEn.addEventListener("click", async ()=>{
   btnLoadEn.disabled = true; btnLoadEn.textContent = "Načítám…";
-  await loadEnglish(enTopic.value || "common objects");
-  btnLoadEn.disabled = false; btnLoadEn.textContent = "Načíst balíček (AI)";
+  await loadEnglishFromAdmin();
+  btnLoadEn.disabled = false; btnLoadEn.textContent = "Načíst slova z adminu (AI)";
   alert("Balíček načten. Můžeš cvičit.");
 });
 
 btnReset.addEventListener("click", ()=>{
-  if(confirm("Smazat statistiky?")){ localStorage.removeItem(storeKey); location.reload(); }
+  if(confirm("Smazat statistiky v zařízení?")){ localStorage.removeItem(storeKey); location.reload(); }
 });
 
-// Start
-nextQ();
-
-  // ===== Chat s agentem (napojení na /api/agent) =====
+/** ---------- Chat s agentem ---------- **/
 const chatLogEl = document.getElementById('chatLog');
 const chatInputEl = document.getElementById('chatInput');
 const sendChatBtn = document.getElementById('sendChat');
@@ -322,11 +314,32 @@ async function sendChat(){
     const r = await fetch('/api/agent', {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-     body: JSON.stringify({ persona: personaSel.value, message: text, history: chatHistory, userId })
+      body: JSON.stringify({ persona: personaSel.value, message: text, history: chatHistory, userId })
     });
     const data = await r.json();
-    const reply = data?.reply || 'Promiň, něco se nepovedlo. Zkus to ještě jednou.';
+    let reply = data?.reply || 'Promiň, něco se nepovedlo. Zkus to ještě jednou.';
+    let meta = null;
+
+    // Podpora skryté meta informace: [[META]] { ...json... }
+    const parts = reply.split('[[META]]');
+    if (parts.length > 1) {
+      reply = parts[0].trim();
+      try { meta = JSON.parse(parts[1]); } catch {}
+    }
+
     addMsg('assistant', reply);
+
+    // pokud agent vyhodnotil odpověď, zapiš pokrok
+    if (meta && meta.event === 'evaluate') {
+      const mode = meta.mode || 'unknown';
+      const item = meta.item || null;
+      const correct = !!meta.correct;
+      fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, mode, correct, item })
+      }).catch(()=>{});
+    }
   }catch(e){
     addMsg('assistant', 'Ups, spojení selhalo. Zkus to znovu.');
   }finally{
@@ -343,21 +356,18 @@ personaSel.addEventListener('change', ()=>{
 // úvodní pozdrav
 addMsg('assistant', 'Ahoj! Jsem Robot kamarád. Umím tě zkoušet z násobilky, vyjmenovaných slov a angličtiny. Co dáme jako první?');
 
-// ===== Profil (trvalá paměť přes /api/profile) =====
+/** ---------- Profil (Postgres) ---------- **/
 const likesInput = document.getElementById('likesInput');
 const dailyGoalInput = document.getElementById('dailyGoalInput');
 const personaSelectProfile = document.getElementById('personaSelect');
 const saveProfileBtn = document.getElementById('saveProfile');
 const profileMsg = document.getElementById('profileMsg');
-
-// pokud už existuje výběr persony v chat sekci, synchronizujeme je oběma směry
-const personaSelChat = document.getElementById('persona');
+const personaSelChat = personaSel;
 
 function setPersonaUI(val){
   if (personaSelectProfile) personaSelectProfile.value = val;
   if (personaSelChat) personaSelChat.value = val;
 }
-
 async function loadProfile(){
   try{
     const r = await fetch(`/api/profile?userId=${encodeURIComponent(userId)}`);
@@ -366,15 +376,10 @@ async function loadProfile(){
     dailyGoalInput.value = p?.goals?.dailyQuestions ?? 10;
     setPersonaUI(p.persona || 'Robot kamarád');
     profileMsg.textContent = 'Profil načten.';
-    // úvodní zpráva chatu může reflektovat personu
-    if (typeof chatLogEl !== 'undefined' && chatLogEl && !chatLogEl.innerHTML.trim()){
-      addMsg('assistant', `Ahoj! Jsem ${p.persona || 'Robot kamarád'}. Vidím, že máš rád ${ (p.likes||[]).join(', ') || 'spoustu věcí' }. Dáme si dnes cíl ${p?.goals?.dailyQuestions ?? 10} otázek?`);
-    }
   }catch(e){
     profileMsg.textContent = 'Profil se nepodařilo načíst.';
   }
 }
-
 async function saveProfile(){
   const likes = likesInput.value.split(',').map(s=>s.trim()).filter(Boolean);
   const daily = Math.max(1, parseInt(dailyGoalInput.value || '10', 10));
@@ -383,10 +388,7 @@ async function saveProfile(){
     const r = await fetch('/api/profile', {
       method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({
-        userId,
-        patch: { likes, persona, goals: { dailyQuestions: daily } }
-      })
+      body: JSON.stringify({ userId, patch: { likes, persona, goals: { dailyQuestions: daily } } })
     });
     const p = await r.json();
     setPersonaUI(p.persona || 'Robot kamarád');
@@ -396,11 +398,7 @@ async function saveProfile(){
   }
 }
 if (saveProfileBtn) saveProfileBtn.addEventListener('click', saveProfile);
-
-// načti profil po načtení stránky
 loadProfile();
-  
-  
 </script>
 </body>
 </html>
