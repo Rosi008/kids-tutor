@@ -1,4 +1,4 @@
-// api/generate.js — Node runtime (fix pro chybu s Edge a nepodporovanými moduly)
+// api/generate.js — Node runtime (AI pomocník pro slovíčka)
 export const config = { runtime: 'nodejs' };
 
 async function readBody(req) {
@@ -9,20 +9,22 @@ async function readBody(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const body = await readBody(req);
-    const { mode, prompt } = body || {};
+    const { mode, prompt, words } = body || {};
     if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
-    if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
 
     const sys = "You are a kind primary-school tutor for a 10-year-old Czech kid. Keep answers short, clear, and age-appropriate. Czech UI, simple CEFR A1-A2 English.";
-    const user =
-      mode === 'en-vocab'
-        ? `Vytvoř JSON se 5 položkami: [{"cz":"...", "en":"...", "example":"krátká anglická věta s tímto slovem, A1-A2", "distractors":["...","..."]}]. Téma: ${prompt}.`
-        : prompt;
+
+    let user;
+    if (Array.isArray(words) && words.length) {
+      user = `Vytvoř JSON pole položek pro TATO přesná anglická slova (NEPŘIDÁVEJ jiná): ${words.join(", ")}. Každá položka má tvar {"cz":"...", "en":"...", "example":"krátká anglická věta s tímto slovem (A1-A2)", "distractors":["...","..."]}. Odpověz pouze JSONem bez textu navíc.`;
+    } else if (mode === 'en-vocab') {
+      user = `Vytvoř JSON se 5 položkami: [{"cz":"...", "en":"...", "example":"krátká anglická věta s tímto slovem, A1-A2", "distractors":["...","..."]}]. Téma: ${prompt||'basic'}. Bez textu navíc.`;
+    } else {
+      user = prompt || 'Vytvoř jednoduchá cvičení.';
+    }
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -33,10 +35,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         temperature: 0.3,
-        messages: [
-          { role: 'system', content: sys },
-          { role: 'user', content: user }
-        ]
+        messages: [{ role: 'system', content: sys }, { role: 'user', content: user }]
       })
     });
 
