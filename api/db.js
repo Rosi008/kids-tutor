@@ -2,13 +2,12 @@
 import { neon } from "@neondatabase/serverless";
 
 const CONN = process.env.POSTGRES_URL;
-if (!CONN) {
-  console.warn("POSTGRES_URL is missing – set it in Vercel → Project → Settings → Environment Variables.");
-}
+if (!CONN) console.warn("POSTGRES_URL is missing – set it in Vercel → Project → Settings → Environment Variables.");
 export const sql = CONN ? neon(CONN) : async () => { throw new Error("Missing POSTGRES_URL"); };
 
-/** Jednorázová inicializace tabulek (idempotentní) */
+/** Jednorázová inicializace tabulek (po jedné, idempotentně) */
 export async function ensureSchema() {
+  // 1) profiles
   await sql/* sql */`
     create table if not exists profiles (
       user_id    text primary key,
@@ -19,15 +18,21 @@ export async function ensureSchema() {
       created_at timestamptz default now(),
       updated_at timestamptz default now()
     );
+  `;
 
+  // 2) progress_summary
+  await sql/* sql */`
     create table if not exists progress_summary (
       user_id    text primary key,
-      totals     jsonb,     -- { seen:int, ok:int }
-      per_mode   jsonb,     -- { tables:{seen,ok,streak}, vyjmenovana:{...}, en:{...} }
+      totals     jsonb,
+      per_mode   jsonb,
       created_at timestamptz default now(),
       updated_at timestamptz default now()
     );
+  `;
 
+  // 3) progress_daily
+  await sql/* sql */`
     create table if not exists progress_daily (
       user_id text,
       day     date,
@@ -35,7 +40,10 @@ export async function ensureSchema() {
       ok      int default 0,
       primary key (user_id, day)
     );
+  `;
 
+  // 4) progress_events
+  await sql/* sql */`
     create table if not exists progress_events (
       id      bigserial primary key,
       user_id text,
@@ -108,9 +116,7 @@ function emptyPerMode() {
     en: { seen: 0, ok: 0, streak: 0 },
   };
 }
-function todayStr() {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-}
+function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 export async function getProgress(userId) {
   await ensureSchema();
@@ -126,12 +132,7 @@ export async function getProgress(userId) {
   const daily = {};
   for (const r of dRows) daily[r.day instanceof Date ? r.day.toISOString().slice(0, 10) : r.day] = { seen: r.seen, ok: r.ok };
 
-  const lastItems = eRows.map(r => ({
-    mode: r.mode,
-    item: r.item,
-    ok: !!r.correct,
-    ts: r.ts?.toISOString?.() || r.ts,
-  }));
+  const lastItems = eRows.map(r => ({ mode: r.mode, item: r.item, ok: !!r.correct, ts: r.ts?.toISOString?.() || r.ts }));
 
   return { userId, totals, perMode, daily, lastItems, createdAt: summary?.created_at, updatedAt: summary?.updated_at };
 }
