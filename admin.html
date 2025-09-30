@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kids Tutor – Admin</title>
+<style>
+body{font:16px system-ui;margin:0;background:#f6f7fb;color:#111}
+main{max-width:960px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+textarea{width:100%;min-height:160px}
+input,textarea,select,button{font:inherit;padding:10px;border:1px solid #ced4da;border-radius:10px}
+button.primary{background:#111;color:#fff;border-color:#111}
+.stat{color:#666}
+</style>
+</head>
+<body>
+<main>
+<section class="card">
+  <div class="row">
+    <strong>Admin přístup</strong>
+    <input id="token" placeholder="ADMIN_TOKEN" style="flex:1">
+    <button id="saveTok" class="primary">Uložit</button>
+    <span id="tokMsg" class="stat"></span>
+  </div>
+</section>
+
+<section class="card">
+  <strong>Agent – nastavení</strong>
+  <div class="row"><button id="loadCfg">Načíst</button><button id="saveCfg" class="primary">Uložit</button><span id="cfgMsg" class="stat"></span></div>
+  <div class="row" style="gap:16px">
+    <div style="flex:1">
+      <div class="stat">agent.md (styl, tón, šablona)</div>
+      <textarea id="agentMd"></textarea>
+    </div>
+    <div style="flex:1">
+      <div class="stat">agent.json (model, teplota…)</div>
+      <textarea id="agentJson" style="min-height:160px"></textarea>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <strong>Vyjmenovaná slova</strong>
+  <div class="row"><button id="loadVyjm">Načíst</button><button id="saveVyjm" class="primary">Uložit</button><span id="vyjmMsg" class="stat"></span></div>
+  <textarea id="vyjmBox"></textarea>
+</section>
+
+<section class="card">
+  <strong>English words (jen EN; agent přeloží + vytvoří věty)</strong>
+  <div class="row">
+    <button id="loadEN">Načíst</button>
+    <button id="saveEN" class="primary">Uložit</button>
+    <button id="pushChroma" title="vytvoří embeddingy a uloží do Chroma">Push do Chroma</button>
+    <span id="enMsg" class="stat"></span>
+  </div>
+  <textarea id="enBox"></textarea>
+</section>
+</main>
+
+<script>
+const tokInput = document.getElementById('token');
+const tokMsg = document.getElementById('tokMsg');
+document.getElementById('saveTok').onclick = () => {
+  localStorage.setItem('ADMIN_TOKEN', tokInput.value.trim());
+  tokMsg.textContent = 'Uloženo.';
+};
+tokInput.value = localStorage.getItem('ADMIN_TOKEN') || '';
+
+async function GET(url){
+  const r = await fetch(url);
+  return await r.json();
+}
+async function POST(url, body, admin=false){
+  const headers = { 'Content-Type':'application/json' };
+  if(admin){ const t = localStorage.getItem('ADMIN_TOKEN'); if(t) headers['x-admin-token']=t; }
+  const r = await fetch(url, { method:'POST', headers, body: JSON.stringify(body||{}) });
+  if(!r.ok) throw new Error(await r.text());
+  return await r.json();
+}
+
+// Agent config
+const mdEl = document.getElementById('agentMd');
+const jsEl = document.getElementById('agentJson');
+const cfgMsg = document.getElementById('cfgMsg');
+document.getElementById('loadCfg').onclick = async ()=>{
+  const cfg = await GET('/api/config');
+  mdEl.value = cfg.md; jsEl.value = JSON.stringify(cfg.json, null, 2);
+  cfgMsg.textContent = 'Načteno.';
+};
+document.getElementById('saveCfg').onclick = async ()=>{
+  const json = JSON.parse(jsEl.value || '{}');
+  await POST('/api/config', { md: mdEl.value, json }, true);
+  cfgMsg.textContent = 'Uloženo.';
+};
+
+// Vyjmenovaná
+const vyjmBox = document.getElementById('vyjmBox');
+const vyjmMsg = document.getElementById('vyjmMsg');
+document.getElementById('loadVyjm').onclick = async ()=>{
+  const data = await GET('/api/lists?type=vyjmenovana');
+  vyjmBox.value = JSON.stringify(data, null, 2); vyjmMsg.textContent = 'Načteno.';
+};
+document.getElementById('saveVyjm').onclick = async ()=>{
+  const data = JSON.parse(vyjmBox.value || '{}');
+  await POST('/api/lists', { type:'vyjmenovana', data }, true);
+  vyjmMsg.textContent = 'Uloženo.';
+};
+
+// EN words
+const enBox = document.getElementById('enBox');
+const enMsg = document.getElementById('enMsg');
+document.getElementById('loadEN').onclick = async ()=>{
+  const data = await GET('/api/lists?type=english_words');
+  enBox.value = JSON.stringify(data, null, 2); enMsg.textContent = 'Načteno.';
+};
+document.getElementById('saveEN').onclick = async ()=>{
+  const data = JSON.parse(enBox.value || '{}');
+  await POST('/api/lists', { type:'english_words', data }, true);
+  enMsg.textContent = 'Uloženo.';
+};
+document.getElementById('pushChroma').onclick = async ()=>{
+  const data = JSON.parse(enBox.value || '{}');
+  const words = (data.words || []).map((w,i)=>({ id:`en-${i}-${w}`, text:w, metadata:{kind:'word'} }));
+  await POST('/api/memory?action=upsert', { namespace:'english', items: words }, true);
+  enMsg.textContent = 'Nahráno do Chroma.';
+};
+</script>
+</body>
+</html>
