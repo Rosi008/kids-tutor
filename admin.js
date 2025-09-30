@@ -143,8 +143,7 @@ async function loadConfig(){
     var data = await res.json();
     var parsed = parseConfigResponse(data);
     $('#agent-json').value = JSON.stringify(parsed.agentJson, null, 2);
-    $('#agent-md').value = parsed.agentMd || '# Styl a pravidla agenta
-';
+    $('#agent-md').value = parsed.agentMd || '# Styl a pravidla agenta\n';
     show('#config-status','Načteno ✓','ok');
   }catch(e){ show('#config-status','Nepovedlo se načíst: '+e.message,'err'); }
 }
