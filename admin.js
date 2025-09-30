@@ -251,8 +251,7 @@ function uploadLists(e){
 
 // DIAGNOSTICS
 async function ping(path){
-  show('#diag-output', '→ GET '+path+'
-');
+show('#diag-output', '→ GET ' + path + '\n');
   try {
     var res = await authFetch(path);
     var text = await res.text();
