@@ -256,10 +256,7 @@ show('#diag-output', '→ GET ' + path + '\n');
     var res = await authFetch(path);
     var text = await res.text();
     var el = $('#diag-output');
-    if(el){ el.textContent += 'HTTP '+res.status+'
-'+text+'
-
-'; }
+  if (el) { el.textContent += 'HTTP ' + res.status + '\n' + text + '\n\n'; }
   } catch(e){
     var el2 = $('#diag-output'); if(el2){ el2.textContent += 'ERR '+e.message+'
 
