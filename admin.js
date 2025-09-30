@@ -197,9 +197,7 @@ function parseVyjInput(){
   if(!raw) return [];
   try { var arr = JSON.parse(raw); if(Array.isArray(arr)) return arr.map(String); }
   catch(e){}
-  var lines = raw.split(/
-?
-/);
+  var lines = raw.split(/?/);
   var out = [];
   for(var i=0;i<lines.length;i++){ var s = (lines[i]||'').trim(); if(s){ out.push(s); } }
   return out;
