@@ -1,0 +1,64 @@
+```css
+:root{
+  --radius:16px; --gap:16px; --pad:16px;
+  --bg:#f7f9fc; --card:#fff; --text:#0d1b2a; --muted:#6b7280;
+  --primary:#2563eb; --success:#16a34a; --danger:#dc2626;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text)}
+main{padding:16px 16px 80px}
+.card{background:var(--card); border-radius:var(--radius); padding:var(--pad); box-shadow:0 2px 12px rgba(0,0,0,.05); margin-bottom:16px}
+.badge{display:inline-block; background:#e0e7ff; color:#1e40af; padding:4px 8px; border-radius:999px; font-size:12px}
+.muted{color:var(--muted); font-size:14px; margin-top:8px}
+.cta{background:var(--primary); color:#fff; border:none; border-radius:12px; padding:14px 18px; font-size:18px}
+.ghost{background:transparent; border:1px solid #e5e7eb; border-radius:12px; padding:10px 14px; font-size:16px}
+
+.tab{display:none}
+.tab.active{display:block}
+.tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; gap:8px; padding:8px; background:#fff; border-top:1px solid #e5e7eb}
+.tabbar button{flex:1; padding:12px; font-size:16px; border:none; background:transparent}
+.tabbar button.active{color:var(--primary); font-weight:700}
+
+.tracks{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--gap)}
+.track{display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; text-align:left}
+progress{width:100%; height:10px}
+
+.mode-switch,.subtabs{display:flex; gap:8px; margin:8px 0}
+.mode-switch button,.subtabs button{flex:1; padding:10px; border-radius:12px; border:1px solid #e5e7eb; background:#fff}
+.mode-switch button.active,.subtabs button.active{background:#eef2ff; border-color:#c7d2fe}
+
+.grid{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--gap)}
+.grid.two{grid-template-columns:repeat(2,1fr)}
+.tile{background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px; font-size:18px}
+
+.quiz.hidden{display:none}
+.quiz-top{display:flex; justify-content:space-between; align-items:center; margin:8px 0}
+.chip{display:inline-block; padding:4px 8px; border-radius:999px; background:#f3f4f6; font-size:12px}
+.question{font-size:22px; margin-bottom:12px}
+.answers{display:grid; gap:8px}
+.answers input[type="text"], .answers .option{padding:12px; border:1px solid #e5e7eb; border-radius:12px; font-size:18px; background:#fff}
+.answers .option.selected{outline:3px solid #bfdbfe}
+.feedback{min-height:28px; margin:8px 0}
+.feedback.ok{color:var(--success)}
+.feedback.no{color:var(--danger)}
+.quiz-actions{display:flex; gap:8px; justify-content:flex-end}
+
+.chat-log{display:flex; flex-direction:column; gap:8px; max-height:40vh; overflow:auto; padding:8px; background:#fff; border:1px solid #e5e7eb; border-radius:12px}
+.chat-log .msg{padding:10px 12px; border-radius:12px; max-width:80%}
+.chat-log .me{background:#e0f2fe; margin-left:auto}
+.chat-log .bot{background:#f1f5f9; margin-right:auto}
+.chat-form{display:flex; gap:8px; margin-top:8px}
+.chat-form input{flex:1; padding:12px; border-radius:12px; border:1px solid #e5e7eb}
+
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.chips .chip-btn{border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; background:#fff}
+.row{display:flex; align-items:center; gap:8px}
+
+/* Přístupnost přepínače */
+body.big-font{font-size:18px}
+body.big-font .question{font-size:24px}
+
+@media (min-width:900px){
+  main{max-width:900px; margin:0 auto}
+}
