@@ -1,6 +1,3 @@
-# index.js
-
-```js
 // index.js (bez build stepu)
 // --------------------------
 // Napojení na API: /api/profile, /api/progress, /api/lists
