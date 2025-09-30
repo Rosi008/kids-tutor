@@ -243,8 +243,7 @@ function uploadLists(e){
   uploadTextFile(e.target, null, function(text){
     try {
       var data = JSON.parse(text);
-      if(data && Array.isArray(data.vyjmenovana)){ $('#vyj-text').value = data.vyjmenovana.join('
-'); }
+      if (data && Array.isArray(data.vyjmenovana)) { $('#vyj-text').value = data.vyjmenovana.join('\n'); }
       if(data && Array.isArray(data.english)){ $('#en-json').value = JSON.stringify(data.english, null, 2); }
     } catch(err){ show('#lists-status','Chybný JSON: '+err.message,'err'); }
   });
