@@ -11,7 +11,7 @@
     <div class="brand">🛠️ Admin • Učební kamarád</div>
     <div class="right">
       <span id="env-badge" class="badge">offline</span>
-      <button id="btn-logout" class="ghost small" title="Odhlásit">Odhlásit</button>
+      <button type="button" id="btn-logout" class="ghost small" title="Odhlásit">Odhlásit</button>
     </div>
   </header>
 
@@ -30,9 +30,9 @@
         <input id="api-base" type="text" placeholder="např. https://app.vercel.app" />
       </label>
       <div class="row end">
-        <button id="btn-login" class="cta">Přihlásit</button>
+        <button type="button" id="btn-login" class="cta">Přihlásit</button>
       </div>
-      <div id="gate-status" class="status"></div>
+      <div id="gate-status" class="status" aria-live="polite"></div>
     </div>
   </section>
 
@@ -126,6 +126,6 @@
     </section>
   </main>
 
-  <script src="./admin.js" type="module"></script>
+  <script src="./admin.js" defer></script>
 </body>
 </html>
