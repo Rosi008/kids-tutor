@@ -1,404 +1,724 @@
+# index.html
+
+```html
 <!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <meta name="robots" content="noindex,nofollow"/>
-  <title>Učební agent pro syna</title>
-  <style>
-    :root { --gap: 12px; --card:#fff; --ink:#111; --muted:#666; --bg:#f6f7fb; --ok:#1a7f37; --bad:#c92a2a; }
-    *{box-sizing:border-box} body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI;color:var(--ink);background:var(--bg)}
-    header{position:sticky;top:0;background:#fff;border-bottom:1px solid #e9ecef;padding:12px 16px}
-    main{max-width:980px;margin:0 auto;padding:16px;display:grid;gap:var(--gap)}
-    .row{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center}
-    .card{background:var(--card);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px}
-    button,select,input[type="number"],input[type="text"]{font:inherit;border:1px solid #ced4da;border-radius:12px;padding:10px 12px;background:#fff}
-    button{cursor:pointer} button.primary{background:#111;color:#fff;border-color:#111}
-    .stat{color:var(--muted)} .ok{color:var(--ok)} .bad{color:var(--bad)} .hidden{display:none}
-    @media (hover:hover){button:hover{opacity:.9}}
-
-    /* Chat */
-    #chatLog{background:#fff;border-radius:12px;padding:12px;height:260px;overflow:auto;border:1px solid #e9ecef}
-    .msg{display:flex;margin:6px 0}
-    .msg.me{justify-content:flex-end}
-    .msg .bubble{padding:10px 12px;border-radius:14px;max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-    .msg.me .bubble{background:#111;color:#fff;border-bottom-right-radius:4px}
-    .msg.bot .bubble{background:#f1f3f5;border-bottom-left-radius:4px}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Učební kamarád</title>
+  <link rel="stylesheet" href="/index.css" />
 </head>
 <body>
-<header class="row">
-  <strong>Učební agent</strong>
-  <div style="margin-left:auto" class="row">
-    <select id="mode">
-      <option value="tables">Násobilka</option>
-      <option value="vyjmenovana">Vyjmenovaná slova</option>
-      <option value="en">Angličtina (slovíčka)</option>
-    </select>
-    <button id="reset">Reset statistik</button>
-  </div>
-</header>
+  <main id="app">
+    <!-- Domů -->
+    <section id="tab-home" class="tab active" aria-labelledby="tabbtn-home">
+      <article class="card mission" role="region" aria-label="Dnešní mise">
+        <span class="badge" id="home-badge">Doporučeno</span>
+        <h1>Dnešní mise</h1>
+        <p id="mission-text">Načítám doporučení…</p>
+        <button id="start-recommended" class="cta">Začít</button>
+        <p id="mission-why" class="muted"></p>
+      </article>
 
-<main>
-  <section class="card">
-    <div class="row">
-      <div>
-        <label>Obtížnost: </label>
-        <select id="difficulty">
-          <option value="easy">Lehká</option>
-          <option value="mix" selected>Smíšená</option>
-          <option value="hard">Těžká</option>
-        </select>
+      <article class="card path" role="region" aria-label="Tvoje cesta">
+        <h2>Tvoje cesta</h2>
+        <div class="tracks">
+          <button class="track" data-mode="math">
+            <span>🧮 Násobilka</span>
+            <progress max="100" value="0" id="prog-math"></progress>
+            <small id="label-math">Načítám…</small>
+          </button>
+          <button class="track" data-mode="czech">
+            <span>📚 Vyjmenovaná</span>
+            <progress max="100" value="0" id="prog-czech"></progress>
+            <small id="label-czech">Načítám…</small>
+          </button>
+          <button class="track" data-mode="english">
+            <span>🗣️ Slovíčka</span>
+            <progress max="100" value="0" id="prog-english"></progress>
+            <small id="label-english">Načítám…</small>
+          </button>
+        </div>
+      </article>
+
+      <article class="card streak" role="region" aria-label="Streak a XP">
+        <div>🔥 Streak: <strong id="streak">0</strong> dnů</div>
+        <div class="xp">
+          <label for="xp-progress">XP dnes</label>
+          <progress id="xp-progress" max="100" value="0"></progress>
+          <small><span id="xp-today">0</span> / <span id="xp-goal">100</span></small>
+        </div>
+      </article>
+
+      <article class="card tip" role="region" aria-label="Tip od kamaráda">
+        <h2>Tip od kamaráda</h2>
+        <p id="agent-tip">„Ahoj! Zkus dnes krátkou výzvu, půjde ti to! 💪“</p>
+        <button class="ghost" data-open-chat>Zeptat se v chatu</button>
+      </article>
+    </section>
+
+    <!-- Cvičit -->
+    <section id="tab-practice" class="tab" aria-labelledby="tabbtn-practice">
+      <div class="mode-switch" role="tablist" aria-label="Výběr režimu">
+        <button role="tab" aria-selected="true" id="mode-math" data-mode="math" class="active">Násobilka</button>
+        <button role="tab" aria-selected="false" id="mode-czech" data-mode="czech">Vyjmenovaná</button>
+        <button role="tab" aria-selected="false" id="mode-english" data-mode="english">Slovíčka</button>
       </div>
 
-      <div id="tablesCfg" class="row">
-        <label>Rozsah násobků: </label>
-        <input type="number" id="minA" value="1" min="0" max="12" style="width:70px">
-        <span>×</span>
-        <input type="number" id="maxA" value="10" min="1" max="12" style="width:70px">
+      <div class="subtabs" role="tablist" aria-label="Výběr doporučení">
+        <button role="tab" aria-selected="true" data-sub="recommended" class="active">Doporučeno</button>
+        <button role="tab" aria-selected="false" data-sub="all">Vše</button>
       </div>
 
-      <div id="vyjmCfg" class="row hidden">
-        <label>Série:</label>
-        <select id="series">
-          <option value="B">B</option><option value="L">L</option><option value="M">M</option>
-          <option value="P">P</option><option value="S">S</option><option value="V">V</option><option value="Z">Z</option>
-          <option value="mix" selected>Mix</option>
-        </select>
+      <div id="practice-recommended" class="pane active" role="region" aria-label="Doporučená sada">
+        <article class="card">
+          <span class="badge">Doporučeno</span>
+          <h2 id="rec-title">Rychlá sada (≈ 2 min)</h2>
+          <p id="rec-desc">Mix 5 úloh podle tvých posledních výsledků.</p>
+          <button class="cta" id="start-quick">Start</button>
+        </article>
       </div>
 
-      <div id="enCfg" class="row hidden">
-        <button id="loadEn" class="primary">Načíst slova z adminu (AI)</button>
-        <span class="stat">admin zadává pouze EN slova, AI doplní překlad + větu</span>
+      <div id="practice-all" class="pane" role="region" aria-label="Všechny sady">
+        <div class="grid" id="all-tiles">
+          <!-- dynamicky doplněno -->
+        </div>
       </div>
-    </div>
-  </section>
 
-  <section class="card" id="quiz">
-    <div id="qtext" style="font-size:20px;margin-bottom:8px">Klikni „Další“</div>
-    <input id="answer" type="text" placeholder="odpověď" style="width:100%;max-width:420px">
-    <div class="row" style="margin-top:12px">
-      <button id="check" class="primary">Zkontrolovat</button>
-      <button id="next">Další</button>
-      <div id="feedback" class="stat"></div>
-    </div>
-  </section>
+      <!-- Běh kvízu -->
+      <section id="quiz" class="quiz hidden" aria-live="polite">
+        <div class="quiz-top">
+          <span id="diff-chip" class="chip">Akorát</span>
+          <span id="quiz-progress">1 / 5</span>
+          <span id="quiz-timer">⏱︎</span>
+        </div>
+        <div class="quiz-card card">
+          <div id="question-text" class="question">…</div>
+          <div id="answers" class="answers"></div>
+          <div id="feedback" class="feedback" role="status"></div>
+          <div class="quiz-actions">
+            <button id="btn-hint" class="ghost">Nápověda</button>
+            <button id="btn-submit" class="cta">Odpovědět</button>
+          </div>
+        </div>
+      </section>
+    </section>
 
-  <!-- PROFIL -->
-  <section class="card" id="profileCard">
-    <strong>Profil agenta (paměť)</strong>
-    <div class="row" style="gap:8px;align-items:center">
-      <label>Co má rád:</label>
-      <input id="likesInput" type="text" placeholder="např. lego, fotbal" style="min-width:260px">
-      <label>Denní cíl (otázek):</label>
-      <input id="dailyGoalInput" type="number" min="1" value="10" style="width:100px">
-      <label>Postava:</label>
-      <select id="personaSelect">
-        <option value="Robot kamarád">Robot kamarád</option>
-        <option value="Vesmírný průzkumník">Vesmírný průzkumník</option>
-        <option value="Detektiv">Detektiv</option>
-        <option value="Kouzelník">Kouzelník</option>
-        <option value="Fotbalový trenér">Fotbalový trenér</option>
-      </select>
-      <button id="saveProfile" class="primary">Uložit profil</button>
-    </div>
-    <div class="stat" id="profileMsg"></div>
-  </section>
+    <!-- Chat (jednoduché ukotvení) -->
+    <section id="tab-chat" class="tab" aria-labelledby="tabbtn-chat">
+      <article class="card">
+        <h2>Chat s kamarádem</h2>
+        <div class="quick-prompts">
+          <button class="ghost" data-qp="vysvetli">Vysvětli mi dnešní téma</button>
+          <button class="ghost" data-qp="priklady">Dej 3 příklady</button>
+          <button class="ghost" data-qp="slovicka">Procvič slovíčka</button>
+        </div>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" type="text" placeholder="Napiš zprávu…" autocomplete="off" />
+          <button class="cta" type="submit">Odeslat</button>
+        </form>
+      </article>
+    </section>
 
-  <!-- CHAT -->
-  <section class="card" id="agentCard">
-    <div class="row" style="align-items:center;gap:8px">
-      <strong>Chat s agentem</strong>
-      <span class="stat">• interaktivní trenér</span>
-      <span style="flex:1"></span>
-      <label>Postava:</label>
-      <select id="persona">
-        <option value="Robot kamarád" selected>Robot kamarád</option>
-        <option value="Vesmírný průzkumník">Vesmírný průzkumník</option>
-        <option value="Detektiv">Detektiv</option>
-        <option value="Kouzelník">Kouzelník</option>
-        <option value="Fotbalový trenér">Fotbalový trenér</option>
-      </select>
-    </div>
+    <!-- Profil -->
+    <section id="tab-profile" class="tab" aria-labelledby="tabbtn-profile">
+      <article class="card">
+        <h2>Můj profil</h2>
+        <div class="grid two">
+          <label>
+            Denní cíl XP
+            <input id="goal-xp" type="range" min="40" max="200" step="10" />
+            <div><span id="goal-xp-value">100</span> XP</div>
+          </label>
+          <label class="row">
+            <input id="harder-toggle" type="checkbox" />
+            <span>Chci těžší výzvy</span>
+          </label>
+          <div>
+            Záliby
+            <div id="likes" class="chips"></div>
+          </div>
+          <div>
+            Přístupnost
+            <label class="row"><input id="big-font" type="checkbox"/> Větší písmo</label>
+            <label class="row"><input id="reduce-motion" type="checkbox"/> Méně animací</label>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
 
-    <div id="chatLog" aria-live="polite"></div>
+  <!-- Spodní tabbar -->
+  <nav class="tabbar" aria-label="Hlavní navigace">
+    <button id="tabbtn-home" data-tab="home" class="active">🏠 Domů</button>
+    <button id="tabbtn-practice" data-tab="practice">🎯 Cvičit</button>
+    <button id="tabbtn-chat" data-tab="chat">💬 Chat</button>
+    <button id="tabbtn-profile" data-tab="profile">👤 Profil</button>
+  </nav>
 
-    <div class="row" style="margin-top:10px">
-      <input id="chatInput" type="text" placeholder="Napiš odpověď nebo popros o cvičení (např. ‚zkoušej mě z násobilky 7‘)" style="flex:1">
-      <button id="sendChat" class="primary">Poslat</button>
-    </div>
-    <div class="stat" id="agentHint" style="margin-top:6px">
-      Tip: Zkus „dej mi diktát z vyjmenovaných slov S“ nebo „procvič se mnou 10 anglických slov o jídle“.
-    </div>
-  </section>
-
-  <section class="card">
-    <strong>Statistiky</strong>
-    <div id="stats" class="stat">—</div>
-  </section>
-</main>
-
-<script>
-/** ---------- Lokální statistiky (zůstanou) ---------- **/
-const storeKey = "uceni-agent-v1";
-// Trvalé userId (pro profil/pokrok)
-const uidKey = "uceni-agent-uid";
-let userId = localStorage.getItem(uidKey);
-if (!userId) { userId = crypto.randomUUID(); localStorage.setItem(uidKey, userId); }
-
-const state = JSON.parse(localStorage.getItem(storeKey) || '{"hist":[], "deck": [], "streak":0, "seen":0, "ok":0}');
-function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
-function addHist(item){ state.hist.push({...item, ts: Date.now()}); if(state.hist.length>1000) state.hist.shift(); save(); }
-function statRender(){
-  const acc = state.seen ? Math.round(100*state.ok/state.seen) : 0;
-  document.getElementById('stats').textContent = `Pokusy: ${state.seen} • Úspěšné: ${state.ok} (${acc} %) • Streak: ${state.streak}`;
-}
-statRender();
-
-/** ---------- Data: Vyjmenovaná (dynamicky z /api/lists) ---------- **/
-let VYJM_DATA = null;
-async function loadVyjmenovana(){
-  try{
-    const r = await fetch('/api/lists?type=vyjmenovana'); VYJM_DATA = await r.json();
-  }catch(e){
-    VYJM_DATA = null;
-  }
-}
-loadVyjmenovana();
-
-/** ---------- Generátory úloh ---------- **/
-function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
-
-function makeTables(minA,maxA){
-  const a = rand(minA, maxA), b = rand(0, 12);
-  return { type:"tables", q:`Kolik je ${a} × ${b}?`, correct: String(a*b) };
-}
-
-function pickVyjm(series){
-  const data = VYJM_DATA || {};
-  const keysAvail = Object.keys(data).length ? Object.keys(data) : ["B","L","M","P","S","V","Z"];
-  const keys = series==="mix" ? keysAvail : [series];
-  const k = keys[rand(0, keys.length-1)];
-  const list = (data[k] && data[k].length) ? data[k] : ["b_t"]; // fallback
-  const w = list[rand(0, list.length-1)];
-  const txt = String(w).replace(/[iyý]/i, "_");
-  return { type:"vyjm", q:`Doplň správně i/y: ${txt}`, correct: String(w) };
-}
-
-async function loadEnglishFromAdmin(){
-  // 1) vezmeme EN slova z /api/lists
-  const r = await fetch('/api/lists?type=english_words');
-  const data = await r.json();
-  const words = Array.isArray(data?.words) ? data.words.slice(0, 20) : ["apple","book","friend"];
-
-  // 2) požádáme AI, aby vytvořila kartičky (en, cz, example, distractors) z těchto slov
-  const resp = await fetch("/api/generate",{
-    method:"POST", headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ mode:"en-vocab", words })
-  });
-  const { text } = await resp.json();
-  try {
-    const arr = JSON.parse(text); // očekává: [{en,cz,example,distractors}]
-    state.deck = arr;
-  } catch(e){
-    state.deck = words.map(w => ({ en:w, cz:"", example:`This is a ${w}.`, distractors:[w+"s","maple"] }));
-  }
-  save();
-}
-
-function makeEnglish(){
-  if(!state.deck?.length) return { type:"en", q:"Nejprve načti slova z adminu přes „Načíst slova z adminu (AI)“", correct:"" };
-  const it = state.deck[rand(0, state.deck.length-1)];
-  const askType = Math.random()<0.5 ? "cz2en" : "en2cz";
-  if(askType==="cz2en"){
-    return { type:"en", q:`Přelož do EN: „${it.cz || it.en}“`, correct: it.en.toLowerCase(), hint: it.example || "" };
-  } else {
-    return { type:"en", q:`Co znamená anglicky „${it.en}“?`, correct: (it.cz || "").toLowerCase(), hint: it.example || "" };
-  }
-}
-
-/** ---------- UI prvky ---------- **/
-const modeSel = document.getElementById("mode");
-const diffSel = document.getElementById("difficulty");
-const qtext = document.getElementById("qtext");
-const answer = document.getElementById("answer");
-const feedback = document.getElementById("feedback");
-const btnCheck = document.getElementById("check");
-const btnNext = document.getElementById("next");
-const tablesCfg = document.getElementById("tablesCfg");
-const vyjmCfg = document.getElementById("vyjmCfg");
-const enCfg = document.getElementById("enCfg");
-const btnLoadEn = document.getElementById("loadEn");
-const btnReset = document.getElementById("reset");
-
-function updateCfg(){
-  tablesCfg.classList.toggle("hidden", modeSel.value!=="tables");
-  vyjmCfg.classList.toggle("hidden", modeSel.value!=="vyjmenovana");
-  enCfg.classList.toggle("hidden", modeSel.value!=="en");
-}
-updateCfg();
-modeSel.addEventListener("change", updateCfg);
-
-async function nextQ(){
-  feedback.textContent = "";
-  answer.value = "";
-  if(modeSel.value==="tables"){
-    const minA = +document.getElementById("minA").value || 1;
-    const maxA = +document.getElementById("maxA").value || 10;
-    qtext.textContent = (current = makeTables(minA, maxA)).q;
-  } else if(modeSel.value==="vyjmenovana"){
-    const series = document.getElementById("series").value;
-    qtext.textContent = (current = pickVyjm(series)).q;
-  } else {
-    current = makeEnglish();
-    qtext.textContent = current.q;
-  }
-  answer.focus();
-}
-btnNext.addEventListener("click", nextQ);
-
-/** ---------- Kontrola odpovědi + zápis na server ---------- **/
-let current = null;
-btnCheck.addEventListener("click", ()=>{
-  if(!current) return;
-  const a = (answer.value || "").trim().toLowerCase();
-  const ok = a && current.correct && a === current.correct.toLowerCase();
-
-  state.seen++;
-  if (ok) { state.ok++; state.streak++; feedback.innerHTML = `<span class="ok">Správně!</span>`; }
-  else { state.streak = 0; feedback.innerHTML = `<span class="bad">Ještě ne. Správně: ${current.correct}</span>`; }
-
-  addHist({ mode: modeSel.value, q: current.q, a, correct: current.correct, ok });
-
-  // serverové statistiky (Postgres)
-  fetch("/api/progress", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, mode: modeSel.value, correct: ok, item: current.q })
-  }).catch(()=>{});
-
-  statRender();
-});
-
-btnLoadEn.addEventListener("click", async ()=>{
-  btnLoadEn.disabled = true; btnLoadEn.textContent = "Načítám…";
-  await loadEnglishFromAdmin();
-  btnLoadEn.disabled = false; btnLoadEn.textContent = "Načíst slova z adminu (AI)";
-  alert("Balíček načten. Můžeš cvičit.");
-});
-
-btnReset.addEventListener("click", ()=>{
-  if(confirm("Smazat statistiky v zařízení?")){ localStorage.removeItem(storeKey); location.reload(); }
-});
-
-/** ---------- Chat s agentem ---------- **/
-const chatLogEl = document.getElementById('chatLog');
-const chatInputEl = document.getElementById('chatInput');
-const sendChatBtn = document.getElementById('sendChat');
-const personaSel = document.getElementById('persona');
-
-let chatHistory = [];
-function esc(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c] )); }
-function addMsg(role, content){
-  chatHistory.push({ role, content });
-  const html = `<div class="msg ${role==='user'?'me':'bot'}"><div class="bubble">${esc(content)}</div></div>`;
-  chatLogEl.insertAdjacentHTML('beforeend', html);
-  chatLogEl.scrollTop = chatLogEl.scrollHeight;
-}
-async function sendChat(){
-  const text = (chatInputEl.value || "").trim();
-  if(!text) return;
-  addMsg('user', text);
-  chatInputEl.value = ''; chatInputEl.focus(); sendChatBtn.disabled = true;
-  try{
-    const r = await fetch('/api/agent', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ persona: personaSel.value, message: text, history: chatHistory, userId })
-    });
-    const data = await r.json();
-    let reply = data?.reply || 'Promiň, něco se nepovedlo. Zkus to ještě jednou.';
-    let meta = null;
-
-    // Podpora skryté meta informace: [[META]] { ...json... }
-    const parts = reply.split('[[META]]');
-    if (parts.length > 1) {
-      reply = parts[0].trim();
-      try { meta = JSON.parse(parts[1]); } catch {}
-    }
-
-    addMsg('assistant', reply);
-
-    // pokud agent vyhodnotil odpověď, zapiš pokrok
-    if (meta && meta.event === 'evaluate') {
-      const mode = meta.mode || 'unknown';
-      const item = meta.item || null;
-      const correct = !!meta.correct;
-      fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, mode, correct, item })
-      }).catch(()=>{});
-    }
-  }catch(e){
-    addMsg('assistant', 'Ups, spojení selhalo. Zkus to znovu.');
-  }finally{
-    sendChatBtn.disabled = false;
-  }
-}
-sendChatBtn.addEventListener('click', sendChat);
-chatInputEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') sendChat(); });
-personaSel.addEventListener('change', ()=>{
-  chatHistory = [];
-  chatLogEl.innerHTML = '';
-  addMsg('assistant', `Ahoj! Jsem ${personaSel.value}. Řekni mi, co chceš dnes trénovat – násobilku, vyjmenovaná slova, nebo angličtinu.`);
-});
-// úvodní pozdrav
-addMsg('assistant', 'Ahoj! Jsem Robot kamarád. Umím tě zkoušet z násobilky, vyjmenovaných slov a angličtiny. Co dáme jako první?');
-
-/** ---------- Profil (Postgres) ---------- **/
-const likesInput = document.getElementById('likesInput');
-const dailyGoalInput = document.getElementById('dailyGoalInput');
-const personaSelectProfile = document.getElementById('personaSelect');
-const saveProfileBtn = document.getElementById('saveProfile');
-const profileMsg = document.getElementById('profileMsg');
-const personaSelChat = personaSel;
-
-function setPersonaUI(val){
-  if (personaSelectProfile) personaSelectProfile.value = val;
-  if (personaSelChat) personaSelChat.value = val;
-}
-async function loadProfile(){
-  try{
-    const r = await fetch(`/api/profile?userId=${encodeURIComponent(userId)}`);
-    const p = await r.json();
-    likesInput.value = (p.likes || []).join(', ');
-    dailyGoalInput.value = p?.goals?.dailyQuestions ?? 10;
-    setPersonaUI(p.persona || 'Robot kamarád');
-    profileMsg.textContent = 'Profil načten.';
-  }catch(e){
-    profileMsg.textContent = 'Profil se nepodařilo načíst.';
-  }
-}
-async function saveProfile(){
-  const likes = likesInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-  const daily = Math.max(1, parseInt(dailyGoalInput.value || '10', 10));
-  const persona = (personaSelectProfile?.value) || 'Robot kamarád';
-  try{
-    const r = await fetch('/api/profile', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ userId, patch: { likes, persona, goals: { dailyQuestions: daily } } })
-    });
-    const p = await r.json();
-    setPersonaUI(p.persona || 'Robot kamarád');
-    profileMsg.textContent = 'Uloženo.';
-  }catch(e){
-    profileMsg.textContent = 'Uložení se nepodařilo.';
-  }
-}
-if (saveProfileBtn) saveProfileBtn.addEventListener('click', saveProfile);
-loadProfile();
-</script>
+  <script src="/index.js" type="module"></script>
 </body>
 </html>
+```
+
+---
+
+# index.css
+
+```css
+:root{
+  --radius:16px; --gap:16px; --pad:16px;
+  --bg:#f7f9fc; --card:#fff; --text:#0d1b2a; --muted:#6b7280;
+  --primary:#2563eb; --success:#16a34a; --danger:#dc2626;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text)}
+main{padding:16px 16px 80px}
+.card{background:var(--card); border-radius:var(--radius); padding:var(--pad); box-shadow:0 2px 12px rgba(0,0,0,.05); margin-bottom:16px}
+.badge{display:inline-block; background:#e0e7ff; color:#1e40af; padding:4px 8px; border-radius:999px; font-size:12px}
+.muted{color:var(--muted); font-size:14px; margin-top:8px}
+.cta{background:var(--primary); color:#fff; border:none; border-radius:12px; padding:14px 18px; font-size:18px}
+.ghost{background:transparent; border:1px solid #e5e7eb; border-radius:12px; padding:10px 14px; font-size:16px}
+
+.tab{display:none}
+.tab.active{display:block}
+.tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; gap:8px; padding:8px; background:#fff; border-top:1px solid #e5e7eb}
+.tabbar button{flex:1; padding:12px; font-size:16px; border:none; background:transparent}
+.tabbar button.active{color:var(--primary); font-weight:700}
+
+.tracks{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--gap)}
+.track{display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; text-align:left}
+progress{width:100%; height:10px}
+
+.mode-switch,.subtabs{display:flex; gap:8px; margin:8px 0}
+.mode-switch button,.subtabs button{flex:1; padding:10px; border-radius:12px; border:1px solid #e5e7eb; background:#fff}
+.mode-switch button.active,.subtabs button.active{background:#eef2ff; border-color:#c7d2fe}
+
+.grid{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--gap)}
+.grid.two{grid-template-columns:repeat(2,1fr)}
+.tile{background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px; font-size:18px}
+
+.quiz.hidden{display:none}
+.quiz-top{display:flex; justify-content:space-between; align-items:center; margin:8px 0}
+.chip{display:inline-block; padding:4px 8px; border-radius:999px; background:#f3f4f6; font-size:12px}
+.question{font-size:22px; margin-bottom:12px}
+.answers{display:grid; gap:8px}
+.answers input[type="text"], .answers .option{padding:12px; border:1px solid #e5e7eb; border-radius:12px; font-size:18px; background:#fff}
+.answers .option.selected{outline:3px solid #bfdbfe}
+.feedback{min-height:28px; margin:8px 0}
+.feedback.ok{color:var(--success)}
+.feedback.no{color:var(--danger)}
+.quiz-actions{display:flex; gap:8px; justify-content:flex-end}
+
+.chat-log{display:flex; flex-direction:column; gap:8px; max-height:40vh; overflow:auto; padding:8px; background:#fff; border:1px solid #e5e7eb; border-radius:12px}
+.chat-log .msg{padding:10px 12px; border-radius:12px; max-width:80%}
+.chat-log .me{background:#e0f2fe; margin-left:auto}
+.chat-log .bot{background:#f1f5f9; margin-right:auto}
+.chat-form{display:flex; gap:8px; margin-top:8px}
+.chat-form input{flex:1; padding:12px; border-radius:12px; border:1px solid #e5e7eb}
+
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.chips .chip-btn{border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; background:#fff}
+.row{display:flex; align-items:center; gap:8px}
+
+/* Přístupnost přepínače */
+body.big-font{font-size:18px}
+body.big-font .question{font-size:24px}
+
+@media (min-width:900px){
+  main{max-width:900px; margin:0 auto}
+}
+```
+
+---
+
+# index.js
+
+```js
+// index.js (bez build stepu)
+// --------------------------
+// Napojení na API: /api/profile, /api/progress, /api/lists
+// Opatrně a defenzivně: pokud backend vrátí jiný tvar, UI nespadne.
+
+const userId = ensureUserId();
+const state = {
+  profile: null,
+  progress: null,
+  lists: { vyjmenovana: [], english: [] },
+  recommended: null,
+  mode: 'math',
+  subtab: 'recommended',
+  runningQuiz: null,
+};
+
+// --- Boot ---
+window.addEventListener('DOMContentLoaded', async () => {
+  wireTabs();
+  wirePractice();
+  wireProfile();
+  wireChat();
+  await loadAll();
+  renderHome();
+  renderPracticeTiles();
+});
+
+async function loadAll(){
+  const [profile, progress, lists] = await Promise.all([
+    getProfile(),
+    getProgress(),
+    getLists(),
+  ]);
+  state.profile = profile;
+  state.progress = progress;
+  state.lists = lists;
+  computeRecommended();
+}
+
+// --- API helpers ---
+async function fetchJSON(url, opts={}){
+  const res = await fetch(url, { headers: { 'content-type': 'application/json' }, ...opts });
+  if(!res.ok) throw new Error(`${url} ${res.status}`);
+  return await res.json().catch(()=>({}));
+}
+
+async function getProfile(){
+  try{ return await fetchJSON(`/api/profile?userId=${userId}`); }
+  catch{ return { user_id: userId, goals: { xpDaily: 100 }, likes: ['dinosauři','fotbal'], persona: 'kamarád' }; }
+}
+
+async function saveProfile(patch){
+  const body = JSON.stringify({ userId, ...patch });
+  try{ return await fetchJSON(`/api/profile`, { method:'POST', body }); } catch{}
+}
+
+async function getProgress(){
+  try{ return await fetchJSON(`/api/progress?userId=${userId}&limit=200`); }
+  catch{ return { streak:0, xpToday:0, summary:{ per_mode:{} }, recentEvents:[] }; }
+}
+
+async function postEvent({ mode, item, correct, ms }){
+  const body = JSON.stringify({ userId, mode, item, correct, ms, ts: Date.now() });
+  try{ await fetchJSON(`/api/progress`, { method:'POST', body }); }
+  catch(e){ console.warn('POST /api/progress failed, will continue offline'); }
+}
+
+async function getLists(){
+  try{
+    const data = await fetchJSON(`/api/lists`);
+    return {
+      vyjmenovana: Array.isArray(data.vyjmenovana) ? data.vyjmenovana : [],
+      english: Array.isArray(data.english) ? data.english : [],
+    };
+  }catch{
+    return { vyjmenovana: ['být','bydlet','myslivec','obyvatel'], english: [{ en:'cat', cs:'kočka' }, { en:'dog', cs:'pes' }] };
+  }
+}
+
+// --- Recommended logic ---
+function computeRecommended(){
+  const ev = (state.progress?.recentEvents)||[];
+  // map item -> stats
+  const byItem = new Map();
+  for(const e of ev){
+    const key = `${e.mode}:${e.item}`;
+    const m = byItem.get(key) || { seen:0, ok:0, last:0 };
+    m.seen++; if(e.correct) m.ok++; m.last = Math.max(m.last, e.ts||0);
+    byItem.set(key,m);
+  }
+  const weak = []; const reinforce = []; const novel = [];
+  const now = Date.now();
+  for(const [key, s] of byItem){
+    const [mode,item] = key.split(':');
+    const acc = s.ok / s.seen;
+    const days = (now - s.last) / (1000*60*60*24);
+    if(s.seen >= 3 && acc < 0.6) weak.push({mode,item,score:acc});
+    else if(acc >= 0.7 && days >= 2 && days <= 5) reinforce.push({mode,item,days});
+  }
+  // candidate pool per mode
+  const pool = candidatesForMode(state.mode);
+  for(const c of pool){
+    const key = `${state.mode}:${c}`;
+    if(!byItem.has(key)) novel.push({mode:state.mode,item:c});
+  }
+  // assemble 5 items: 2 weak, 2 reinforce, 1 novel (fallbacks as needed)
+  const pick = (arr,n)=>arr.sort(()=>Math.random()-0.5).slice(0,n).map(x=>x.item);
+  let items = [];
+  items.push(...pick(weak,2));
+  items.push(...pick(reinforce,2));
+  if(novel.length) items.push(...pick(novel,1));
+  // Fill if short
+  while(items.length<5){
+    const extra = pool[Math.floor(Math.random()*pool.length)];
+    if(!items.includes(extra)) items.push(extra);
+  }
+  state.recommended = { mode: state.mode, items: items.slice(0,5), why: explainWhy(weak,reinforce,novel) };
+}
+
+function explainWhy(weak,reinforce,novel){
+  const parts=[];
+  if(weak.length) parts.push(`protože se ti naposledy nedařilo u: ${weak.slice(0,2).map(w=>prettyItem(w.item)).join(', ')}`);
+  if(reinforce.length) parts.push(`upevníme: ${reinforce.slice(0,2).map(r=>prettyItem(r.item)).join(', ')}`);
+  if(novel.length) parts.push(`zkusíme novinku: ${prettyItem(novel[0].item)}`);
+  return parts.join('; ');
+}
+
+function candidatesForMode(mode){
+  if(mode==='math') return ['mult-2','mult-3','mult-4','mult-5','mult-6','mult-7','mult-8','mult-9'];
+  if(mode==='czech') return (state.lists.vyjmenovana||[]).slice(0,30).map(w=>`vyj-${w}`);
+  if(mode==='english') return (state.lists.english||[]).slice(0,30).map(w=>`en-${w.en}`);
+  return [];
+}
+
+// --- Render Home ---
+function renderHome(){
+  // Streak & XP
+  document.getElementById('streak').textContent = state.progress?.streak ?? 0;
+  const goal = state.profile?.goals?.xpDaily ?? 100;
+  const xp = state.progress?.xpToday ?? 0;
+  document.getElementById('xp-goal').textContent = goal;
+  document.getElementById('xp-today').textContent = xp;
+  document.getElementById('xp-progress').max = goal;
+  document.getElementById('xp-progress').value = Math.min(xp, goal);
+
+  // Tracks (dummy from per_mode accuracy)
+  const pm = state.progress?.summary?.per_mode || {};
+  updTrack('math', pm.math);
+  updTrack('czech', pm.czech);
+  updTrack('english', pm.english);
+
+  // Mission
+  const m = state.recommended;
+  document.getElementById('mission-text').textContent = m ? missionText(m) : 'Připravuji misi…';
+  document.getElementById('mission-why').textContent = m?.why ? `Proč: ${m.why}` : '';
+}
+
+function updTrack(mode, data){
+  const v = Math.round((data?.mastery ?? 0.3) * 100);
+  document.getElementById(`prog-${mode}`).value = v;
+  document.getElementById(`label-${mode}`).textContent = data?.label || (v<40? 'Začínáme' : v<75? 'Upevňujeme' : 'Letí ti to!');
+}
+
+function missionText(m){
+  const human = m.items.map(prettyItem).slice(0,2).join(' a ');
+  const modeCs = m.mode==='math'? 'násobilku' : m.mode==='czech'? 'vyjmenovaná slova' : 'slovíčka';
+  return `Dnes 5 úloh: ${modeCs} – ${human}.`;
+}
+
+function prettyItem(item){
+  if(item.startsWith('mult-')) return `×${item.split('-')[1]}`;
+  if(item.startsWith('vyj-')) return item.slice(4);
+  if(item.startsWith('en-')) return item.slice(3);
+  return item;
+}
+
+// --- Practice wiring ---
+function wirePractice(){
+  document.getElementById('start-recommended').addEventListener('click', ()=> startQuiz(state.recommended));
+  document.getElementById('start-quick').addEventListener('click', ()=>{
+    computeRecommended(); renderHome(); startQuiz(state.recommended);
+  });
+  // Mode switch
+  for(const btn of document.querySelectorAll('.mode-switch button')){
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.mode-switch button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      state.mode = btn.dataset.mode;
+      computeRecommended();
+      document.getElementById('rec-title').textContent = `Rychlá sada (${state.mode==='math'?'× násobilka': state.mode==='czech'?'vyjmenovaná':'slovíčka'})`;
+      document.getElementById('rec-desc').textContent = 'Mix 5 úloh podle tvých posledních výsledků.';
+      renderPracticeTiles();
+      renderHome();
+    });
+  }
+  // Subtabs
+  for(const btn of document.querySelectorAll('.subtabs button')){
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.subtabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      state.subtab = btn.dataset.sub;
+      document.getElementById('practice-recommended').classList.toggle('active', state.subtab==='recommended');
+      document.getElementById('practice-all').classList.toggle('active', state.subtab==='all');
+    });
+  }
+}
+
+function renderPracticeTiles(){
+  const grid = document.getElementById('all-tiles');
+  grid.innerHTML = '';
+  const items = candidatesForMode(state.mode).slice(0,8);
+  for(const it of items){
+    const b = document.createElement('button');
+    b.className = 'tile';
+    b.textContent = prettyItem(it);
+    b.addEventListener('click', ()=> startQuiz({ mode: state.mode, items: [it, ...shuffle(items.filter(x=>x!==it)).slice(0,4)] }));
+    grid.appendChild(b);
+  }
+}
+
+// --- Quiz engine ---
+function startQuiz(payload){
+  if(!payload || !payload.items || !payload.items.length){
+    alert('Nemám připravené úlohy. Zkus to znova.');
+    return;
+  }
+  const items = payload.items.slice(0,5);
+  const session = {
+    mode: payload.mode,
+    idx: 0, total: items.length,
+    items,
+    correct: 0,
+    started: performance.now(),
+    difficulty: 'Akorát',
+  };
+  state.runningQuiz = session;
+  document.getElementById('quiz').classList.remove('hidden');
+  document.getElementById('practice-recommended').classList.remove('active');
+  document.getElementById('practice-all').classList.remove('active');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const s = state.runningQuiz; if(!s) return;
+  document.getElementById('diff-chip').textContent = s.difficulty;
+  document.getElementById('quiz-progress').textContent = `${s.idx+1} / ${s.total}`;
+  document.getElementById('feedback').textContent='';
+  const item = s.items[s.idx];
+  const q = buildQuestion(s.mode, item, s.difficulty);
+  const qEl = document.getElementById('question-text');
+  const ansEl = document.getElementById('answers');
+  qEl.textContent = q.text;
+  ansEl.innerHTML = '';
+
+  if(q.type==='mcq'){
+    q.options.forEach(opt=>{
+      const div = document.createElement('div');
+      div.className = 'option';
+      div.textContent = opt;
+      div.tabIndex = 0;
+      div.addEventListener('click', ()=> selectOption(div, ansEl));
+      ansEl.appendChild(div);
+    });
+  } else if(q.type==='input'){
+    const inp = document.createElement('input');
+    inp.type='text'; inp.placeholder='Sem napiš odpověď';
+    ansEl.appendChild(inp);
+  }
+
+  const submit = document.getElementById('btn-submit');
+  submit.onclick = ()=> checkAnswer(q, ansEl);
+  const hint = document.getElementById('btn-hint');
+  hint.onclick = ()=> showHint(q);
+}
+
+function selectOption(div, container){
+  container.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));
+  div.classList.add('selected');
+}
+
+function checkAnswer(q, ansEl){
+  let val = '';
+  if(q.type==='mcq'){
+    const sel = ansEl.querySelector('.selected');
+    if(!sel) return; val = sel.textContent;
+  } else {
+    const inp = ansEl.querySelector('input');
+    val = (inp?.value||'').trim();
+    if(!val) return;
+  }
+  const ok = q.check(val);
+  const fb = document.getElementById('feedback');
+  fb.textContent = ok ? 'Správně! ✅' : `Zkus to příště. Správně je: ${q.solution}`;
+  fb.className = 'feedback ' + (ok?'ok':'no');
+
+  // event log
+  postEvent({ mode: state.runningQuiz.mode, item: q.itemId, correct: ok, ms: 0 });
+
+  if(ok) state.runningQuiz.correct++;
+  // adapt diff: po každé 2. odpovědi
+  if(state.runningQuiz.idx%2===1){
+    state.runningQuiz.difficulty = adaptDifficulty(state.runningQuiz);
+    document.getElementById('diff-chip').textContent = state.runningQuiz.difficulty;
+  }
+
+  setTimeout(()=>{
+    state.runningQuiz.idx++;
+    if(state.runningQuiz.idx >= state.runningQuiz.total){
+      endQuiz();
+    } else {
+      renderQuestion();
+    }
+  }, 600);
+}
+
+function adaptDifficulty(s){
+  const ratio = s.correct/(s.idx+1);
+  if(ratio>0.8) return 'Těžší';
+  if(ratio<0.5) return 'Lehčí';
+  return 'Akorát';
+}
+
+function endQuiz(){
+  const s = state.runningQuiz; if(!s) return;
+  const gained = 10 + s.correct*6; // jednoduché XP
+  document.getElementById('quiz').classList.add('hidden');
+  alert(`Skvělé! Získal(a) jsi ${gained} XP. Správně ${s.correct}/${s.total}.`);
+  // Refresh progress z backendu
+  getProgress().then(p=>{ state.progress=p; renderHome(); });
+}
+
+// --- Question builders ---
+function buildQuestion(mode, itemId, difficulty){
+  if(mode==='math') return buildMath(itemId, difficulty);
+  if(mode==='czech') return buildVyj(itemId, difficulty);
+  if(mode==='english') return buildEnglish(itemId, difficulty);
+  return {type:'input', text:'?', solution:'', check:()=>false, itemId};
+}
+
+function buildMath(itemId, difficulty){
+  const n = parseInt(itemId.split('-')[1],10) || 2;
+  const a = n; const b = rand(2,9);
+  const sol = a*b;
+  if(difficulty==='Lehčí'){
+    const opts = shuffle([sol, sol+1, sol-1, sol+2]).slice(0,4);
+    return { type:'mcq', text:`Kolik je ${a} × ${b}?`, options:opts, solution:String(sol), check:(v)=> String(v)==String(sol), itemId };
+  }
+  if(difficulty==='Těžší'){
+    return { type:'input', text:`Vypočítej ${a} × ${b}`, solution:String(sol), check:(v)=> String(v)==String(sol), itemId };
+  }
+  const opts = shuffle([sol, sol+2, sol-2, sol+3]);
+  return { type:'mcq', text:`Kolik je ${a} × ${b}?`, options:opts, solution:String(sol), check:(v)=> String(v)==String(sol), itemId };
+}
+
+function buildVyj(itemId, difficulty){
+  const word = itemId.slice(4);
+  const hole = word.replace('y','_').replace('ý','_').replace('i','_').replace('í','_');
+  const sol = word;
+  if(difficulty==='Těžší'){
+    return { type:'input', text:`Doplň: ${hole}`, solution:sol, check:(v)=> normalize(v)===normalize(sol), itemId };
+  }
+  const options = shuffle([sol, sol.replace('y','i'), sol.replace('i','y'), sol.toUpperCase().slice(0,1)+sol.slice(1)]);
+  return { type:'mcq', text:`Vyber správné slovo:`, options, solution:sol, check:(v)=> normalize(v)===normalize(sol), itemId };
+}
+
+function buildEnglish(itemId, difficulty){
+  const en = itemId.slice(3);
+  const rec = (state.lists.english||[]).find(x=>x.en===en) || { en, cs:'?' };
+  if(difficulty==='Lehčí'){
+    const options = shuffle([rec.cs, '???', (rec.cs||'').slice(0,2)+'…', '—']).map(x=>String(x));
+    return { type:'mcq', text:`Co znamená '${rec.en}' česky?`, options, solution:String(rec.cs), check:(v)=> String(v)===String(rec.cs), itemId };
+  }
+  if(difficulty==='Těžší'){
+    return { type:'input', text:`Přelož do češtiny: '${rec.en}'`, solution:String(rec.cs), check:(v)=> normalize(v)===normalize(rec.cs), itemId };
+  }
+  const options = shuffle([rec.cs, ...sampleOtherCs(rec.cs, 3)]);
+  return { type:'mcq', text:`Vyber správný překlad: '${rec.en}'`, options, solution:String(rec.cs), check:(v)=> String(v)===String(rec.cs), itemId };
+}
+
+function sampleOtherCs(except, n){
+  const pool = (state.lists.english||[]).map(x=>x.cs).filter(Boolean).filter(cs=>cs!==except);
+  return shuffle(pool).slice(0,n);
+}
+
+// --- Chat (stub – napojení na /api/agent je snadné) ---
+function wireChat(){
+  const log = document.getElementById('chat-log');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('chat-input');
+  document.querySelectorAll('[data-open-chat]').forEach(b=> b.addEventListener('click',()=> switchTab('chat')));
+  document.querySelectorAll('[data-qp]').forEach(b=> b.addEventListener('click',()=>{
+    input.value = quickPrompt(b.dataset.qp);
+    input.focus();
+  }));
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const text = input.value.trim(); if(!text) return;
+    pushMsg('me', text);
+    input.value='';
+    pushMsg('bot', 'Přemýšlím…');
+    try{
+      const body = JSON.stringify({ userId, message:text, context: state.recommended });
+      const res = await fetch('/api/agent', { method:'POST', headers:{'content-type':'application/json'}, body });
+      const data = await res.json();
+      replaceLastBot(data.reply || 'Hotovo!');
+    }catch{
+      replaceLastBot('Jsem offline – zkus to později.');
+    }
+  });
+  function pushMsg(who, text){
+    const div = document.createElement('div');
+    div.className = `msg ${who}`; div.textContent = text; log.appendChild(div); log.scrollTop = log.scrollHeight;
+  }
+  function replaceLastBot(text){
+    const last = [...log.querySelectorAll('.msg.bot')].pop();
+    if(last) last.textContent = text; else pushMsg('bot', text);
+  }
+}
+
+function quickPrompt(kind){
+  const m = state.recommended?.mode || 'math';
+  if(kind==='vysvetli') return m==='math'? 'Vysvětli mi násobilku dnes doporučené řady.' : m==='czech'? 'Vysvětli použití i/y u vyjmenovaných slov, prosím.' : 'Vysvětli mi dnešní slovíčka a dej příklad věty.';
+  if(kind==='priklady') return m==='math'? 'Dej mi 3 příklady na procvičení.' : m==='czech'? 'Dej 3 věty s dnešním slovem.' : 'Dej 3 věty s dnešním slovíčkem.';
+  if(kind==='slovicka') return 'Procvič se mnou dnešní anglická slovíčka.';
+  return 'Pomoz mi s dnešní misí.';
+}
+
+// --- Profile wiring ---
+function wireProfile(){
+  const goal = document.getElementById('goal-xp');
+  const goalVal = document.getElementById('goal-xp-value');
+  const harder = document.getElementById('harder-toggle');
+  const likesWrap = document.getElementById('likes');
+  const bigFont = document.getElementById('big-font');
+  const reduceMotion = document.getElementById('reduce-motion');
+
+  // initial values
+  goal.value = state.profile?.goals?.xpDaily ?? 100;
+  goalVal.textContent = goal.value;
+  harder.checked = !!state.profile?.goals?.harder;
+  ;(state.profile?.likes||['dinosauři','kočky','lego']).forEach(addLikeChip);
+
+  goal.addEventListener('input', ()=> goalVal.textContent = goal.value);
+  goal.addEventListener('change', ()=> saveProfile({ goals:{ ...(state.profile?.goals||{}), xpDaily: Number(goal.value) } }));
+  harder.addEventListener('change', ()=> saveProfile({ goals:{ ...(state.profile?.goals||{}), harder: harder.checked } }));
+
+  function addLikeChip(label){
+    const b = document.createElement('button'); b.type='button'; b.className='chip-btn'; b.textContent=label;
+    b.addEventListener('click', async ()=>{
+      const likes = toggleInArray(state.profile?.likes||[], label);
+      state.profile.likes = likes;
+      await saveProfile({ likes });
+      b.classList.toggle('active');
+    });
+    likesWrap.appendChild(b);
+  }
+
+  bigFont.addEventListener('change', ()=> document.body.classList.toggle('big-font', bigFont.checked));
+  reduceMotion.addEventListener('change', ()=> document.documentElement.style.setProperty('scroll-behavior', reduceMotion.checked? 'auto':'smooth'));
+}
+
+// --- Tabs ---
+function wireTabs(){
+  document.querySelectorAll('.tabbar button').forEach(btn=>{
+    btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+  });
+}
+function switchTab(id){
+  document.querySelectorAll('.tabbar button').forEach(b=> b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('.tab').forEach(s=> s.classList.remove('active'));
+  document.getElementById(`tab-${id}`).classList.add('active');
+}
+
+// --- Utils ---
+function ensureUserId(){
+  let id = localStorage.getItem('userId');
+  if(!id){ id = crypto.randomUUID ? crypto.randomUUID() : 'u_'+Math.random().toString(36).slice(2); localStorage.setItem('userId', id); }
+  return id;
+}
+function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+function normalize(s){ return String(s).toLowerCase().trim(); }
+function toggleInArray(arr, val){ return arr.includes(val) ? arr.filter(x=>x!==val) : [...arr, val]; }
+```
