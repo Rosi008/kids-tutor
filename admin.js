@@ -1,4 +1,3 @@
-```js
 // admin.js – zjednodušené: Konfigurace + Seznamy + Diagnostika
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -12,6 +11,41 @@ window.addEventListener('DOMContentLoaded', () => {
   $('#token-input').value = saved;
   $('#api-base').value = base;
   $('#show-token').addEventListener('change', (e)=> $('#token-input').type = e.target.checked ? 'text':'password');
+  $('#btn-login').addEventListener('click', onLogin);
+  $('#btn-logout').addEventListener('click', onLogout);
+  // Enter v token inputu spustí přihlášení
+  $('#token-input').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ onLogin(); } });
+
+  $$('.tabs button').forEach(btn => btn.addEventListener('click', ()=> switchTab(btn.dataset.tab)));
+
+  // config actions
+  $('#config-load').addEventListener('click', loadConfig);
+  $('#config-save').addEventListener('click', saveConfig);
+  $('#json-format').addEventListener('click', () => formatJsonArea('#agent-json'));
+  $('#json-validate').addEventListener('click', () => validateJsonArea('#agent-json', '#config-status'));
+  $('#json-download').addEventListener('click', () => download('agent.json', getAgentJsonString()));
+  $('#json-upload').addEventListener('change', (e)=> uploadTextFile(e.target, '#agent-json'));
+  $('#md-download').addEventListener('click', () => download('agent.md', $('#agent-md').value||''));
+  $('#md-upload').addEventListener('change', (e)=> uploadTextFile(e.target, '#agent-md'));
+
+  // lists actions
+  $('#lists-load').addEventListener('click', loadLists);
+  $('#lists-save').addEventListener('click', saveLists);
+  $('#lists-download').addEventListener('click', downloadLists);
+  $('#lists-upload').addEventListener('change', uploadLists);
+  $('#en-format').addEventListener('click', () => formatJsonArea('#en-json'));
+  $('#en-validate').addEventListener('click', () => validateJsonArea('#en-json', '#lists-status'));
+
+  // diag
+  $$('#tab-diag [data-ping]').forEach(b => b.addEventListener('click', ()=> ping(b.getAttribute('data-ping'))));
+  $('#btn-clear-cache').addEventListener('click', ()=>{ localStorage.clear(); location.reload(); });
+  $('#btn-copy-curl').addEventListener('click', copyCurl);
+
+  // Globální zachytávání JS chyb do statusu
+  window.addEventListener('error', (e)=>{ show('#gate-status', 'Chyba skriptu: '+e.message, 'err'); });
+
+  if(saved){ doLogin(saved, base); }
+});
   $('#btn-login').addEventListener('click', onLogin);
   $('#btn-logout').addEventListener('click', onLogout);
 
@@ -182,4 +216,3 @@ function copyCurl(){
 // helpers
 function download(filename, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'})); a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
 function uploadTextFile(input, targetSel, onText){ const file=input.files&&input.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ const txt=String(reader.result||''); if(onText) onText(txt); else if(targetSel) $(targetSel).value=txt; }; reader.readAsText(file); }
-```
