@@ -266,13 +266,12 @@ show('#diag-output', '→ GET ' + path + '\n');
 function copyCurl(){
   var token = localStorage.getItem(LS_TOKEN) || '';
   var base = apiBase() || '';
-  var curl = 'curl -X POST "'+base+'/api/lists" \
--H "content-type: application/json" \
--H "x-admin-token: '+token+'" \
--d '{
-  "vyjmenovana": ["být","bydlet","myslivec"],
-  "english": [{"en":"cat"},{"en":"dog"}]
-}'';
+  var curl = [
+  'curl -X POST "' + base + '/api/lists"',
+  '-H "content-type: application/json"',
+  '-H "x-admin-token: ' + token + '"',
+  "-d '{\\n  \\\"vyjmenovana\\\": [\\\"být\\\",\\\"bydlet\\\",\\\"myslivec\\\"],\\n  \\\"english\\\": [{\\\"en\\\":\\\"cat\\\"},{\\\"en\\\":\\\"dog\\\"}]\\n}'"
+].join(' \\\n');
   navigator.clipboard.writeText(curl).then(function(){ show('#diag-output','cURL zkopírováno ✓','ok'); }).catch(function(e){});
 }
 
