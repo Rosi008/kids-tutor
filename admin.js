@@ -185,8 +185,7 @@ async function loadLists(){
     var data = await res.json();
     var vyj = Array.isArray(data.vyjmenovana) ? data.vyjmenovana : [];
     var en  = Array.isArray(data.english) ? data.english : [];
-    $('#vyj-text').value = vyj.join('
-');
+    $('#vyj-text').value = vyj.join('');
     $('#en-json').value  = JSON.stringify(en, null, 2);
     show('#lists-status','Načteno ✓','ok');
   }catch(e){ show('#lists-status','Nepovedlo se načíst: '+e.message,'err'); }
